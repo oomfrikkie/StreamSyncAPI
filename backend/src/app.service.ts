@@ -9,4 +9,9 @@ export class AppService {
     const result = await this.dataSource.query('SELECT * FROM "projectmembers"');
     return result;
   }
+
+  async getQualities() {
+    const result = await this.dataSource.query('SELECT * FROM "quality"');
+    return result;
+  }
 }

@@ -17,4 +17,9 @@ home() {
   getMembers() {
     return this.appService.getMembers();
   }
+
+  @Get('qualities')
+  getQualities() {
+    return this.appService.getQualities();
+  }
 }
