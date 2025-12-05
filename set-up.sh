@@ -28,6 +28,13 @@ cd backend || { echo "❌ backend folder not found!"; exit 1; }
 echo "📥 Installing backend dependencies..."
 npm install || { echo "❌ Backend dependencies failed to install"; exit 1; }
 
+# -------- INSTALL BCRYPT + TYPES --------
+echo "🔐 Installing bcrypt and type definitions..."
+npm install bcrypt || { echo "❌ Failed to install bcrypt"; exit 1; }
+npm install --save-dev @types/bcrypt || { echo "❌ Failed to install @types/bcrypt"; exit 1; }
+
+echo "✔ bcrypt + @types/bcrypt installed."
+
 echo "✨ Backend is ready!"
 
 echo ""
