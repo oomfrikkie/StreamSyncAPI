@@ -6,14 +6,17 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 import { AccountModule } from './account/account.module';
+import { ProfileModule } from './profile/profile.module';
 
 @Module({
   imports: [
+    // Load environment variables globally
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '../.env',  // your root .env (you're correct)
+      envFilePath: '../.env',
     }),
 
+    // Database connection
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.POSTGRES_HOST,
@@ -21,13 +24,15 @@ import { AccountModule } from './account/account.module';
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      autoLoadEntities: true,
-      synchronize: false,
+      autoLoadEntities: true,  // automatically loads all @Entity() classes
+      synchronize: false,       // keep false in production
     }),
 
-    // ✅ THIS WAS MISSING — WITHOUT THIS THERE ARE NO /account ROUTES
-    AccountModule,
+    // Feature modules
+    AccountModule,   // contains accounts + verification tokens
+    ProfileModule,   // contains profile creation + queries
   ],
+
   controllers: [AppController],
   providers: [AppService],
 })
