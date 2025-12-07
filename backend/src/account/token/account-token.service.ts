@@ -38,11 +38,18 @@ export class AccountTokenService {
 
     return {
       message: 'Token created',
-      token: token, // you can return the link here too
+      token,
     };
   }
 
- 
+  // ✅ missing method — now added
+  async getTokenEntity(token: string) {
+    return this.tokenRepo.findOne({
+      where: { token },
+      relations: ['account'],
+    });
+  }
+
   async verifyToken(dto: VerifyTokenDto) {
     const tokenEntity = await this.tokenRepo.findOne({
       where: {
@@ -53,26 +60,17 @@ export class AccountTokenService {
     });
 
     if (!tokenEntity) throw new NotFoundException('Invalid token');
+    if (tokenEntity.is_used) throw new BadRequestException('Token already used');
+    if (tokenEntity.expires_at < new Date()) throw new BadRequestException('Token expired');
 
-    if (tokenEntity.is_used) {
-      throw new BadRequestException('Token already used');
-    }
-
-    if (tokenEntity.expires_at < new Date()) {
-      throw new BadRequestException('Token expired');
-    }
-
-    // mark token as used
     tokenEntity.is_used = true;
     tokenEntity.used_at = new Date();
     await this.tokenRepo.save(tokenEntity);
 
-    // handle logic based on type
     if (dto.token_type === 'EMAIL_VERIFICATION') {
       tokenEntity.account.is_verified = true;
-      tokenEntity.account.status = "VERIFIED"
+      tokenEntity.account.status = 'VERIFIED';
       await this.accountRepo.save(tokenEntity.account);
-
       return { message: 'Email verified successfully' };
     }
 

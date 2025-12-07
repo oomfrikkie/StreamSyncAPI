@@ -2,6 +2,8 @@ import { Controller, Post, Body, Get, Param } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto-account/create-account.dto';
 import { LoginDto } from './dto-account/login.dto';
+import { ForgotPasswordDto } from './dto-account/forgot-password.dto';
+import { ResetPasswordDto } from './dto-account/reset-password.dto';
 import { AccountTokenService } from './token/account-token.service';
 
 @Controller('account')
@@ -27,5 +29,15 @@ export class AccountController {
       token,
       token_type: 'EMAIL_VERIFICATION',
     });
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.accountService.requestPasswordReset(dto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.accountService.resetPassword(dto);
   }
 }
