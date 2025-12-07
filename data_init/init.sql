@@ -39,7 +39,22 @@ CREATE TABLE IF NOT EXISTS genre (
     name VARCHAR(100) NOT NULL
 );
 
--- 2. DEPENDENT TABLES
+-- 2. TOKEN TABLE (replaces email + password reset enums)
+
+CREATE TABLE IF NOT EXISTS account_token (
+    token_id SERIAL PRIMARY KEY,
+    token VARCHAR(255) NOT NULL,
+    token_type VARCHAR(50) NOT NULL,      -- "EMAIL_VERIFICATION" or "PASSWORD_RESET"
+    account_id INT NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    used_at TIMESTAMP,
+    is_used BOOLEAN DEFAULT FALSE,
+
+    FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE CASCADE
+);
+
+-- 3. DEPENDENT TABLES
 
 CREATE TABLE IF NOT EXISTS profile (
     profile_id SERIAL PRIMARY KEY,
@@ -87,7 +102,7 @@ CREATE TABLE IF NOT EXISTS profile_genre_preference (
     FOREIGN KEY (genre_id) REFERENCES genre(genre_id)
 );
 
--- 3. INSERTS IN SAFE ORDER
+-- 4. INSERTS IN SAFE FK ORDER
 
 INSERT INTO projectmembers (id, name) VALUES
 (1, 'Felix'),  
@@ -134,3 +149,7 @@ INSERT INTO profile_genre_preference (profile_id, genre_id) VALUES
 (1, 2),
 (2, 1),
 (3, 3);
+
+-- Optional example tokens
+-- INSERT INTO account_token (token, token_type, account_id, expires_at)
+-- VALUES ('demo-verification-token', 'EMAIL_VERIFICATION', 1, NOW() + INTERVAL '24 HOURS');

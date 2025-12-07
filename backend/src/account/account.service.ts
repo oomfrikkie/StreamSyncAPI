@@ -1,32 +1,51 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { Account } from './account.entity';
-import { CreateAccountDto } from './dto/create-account.dto';
-import { LoginDto } from './dto/login.dto';
+import { CreateAccountDto } from './dto-account/create-account.dto';
+import { LoginDto } from './dto-account/login.dto';
+
+import { AccountTokenService } from './token/account-token.service';
 
 @Injectable()
 export class AccountService {
   constructor(
     @InjectRepository(Account)
-    private accountRepo: Repository<Account>,
+    private readonly accountRepo: Repository<Account>,
+
+    private readonly tokenService: AccountTokenService,
   ) {}
 
-  // CREATE ACCOUNT
   async create(dto: CreateAccountDto) {
     const hashed = await bcrypt.hash(dto.password, 10);
 
-    const account = this.accountRepo.create({
+    const newAccount = this.accountRepo.create({
       email: dto.email,
       password_hash: hashed,
+      is_verified: false,
+      status: 'AWAITING_VERIFICATION',
+      failed_login_attempts: 0,
     });
 
-    return this.accountRepo.save(account);
+    const savedAccount = await this.accountRepo.save(newAccount);
+
+    const tokenResult = await this.tokenService.createToken({
+      token_type: 'EMAIL_VERIFICATION',
+      account_id: savedAccount.account_id,
+      expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24),
+    });
+
+    return {
+      message: 'Account created',
+      account_id: savedAccount.account_id,
+      email: savedAccount.email,
+      verification_token: tokenResult.token,
+      verification_link: `/account/verify/${tokenResult.token}`,
+    };
   }
 
-  // LOGIN
   async login(dto: LoginDto) {
     const account = await this.accountRepo.findOne({
       where: { email: dto.email },
@@ -34,18 +53,22 @@ export class AccountService {
 
     if (!account) throw new UnauthorizedException('Invalid credentials');
 
-    const passwordMatches = await bcrypt.compare(
-      dto.password,
-      account.password_hash,
-    );
-
-    if (!passwordMatches) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    const match = await bcrypt.compare(dto.password, account.password_hash);
+    if (!match) throw new UnauthorizedException('Invalid credentials');
 
     return {
       message: 'Login successful',
       account_id: account.account_id,
     };
+  }
+
+  async findById(id: number) {
+    const account = await this.accountRepo.findOne({
+      where: { account_id: id },
+    });
+
+    if (!account) throw new NotFoundException('Account not found');
+
+    return account;
   }
 }

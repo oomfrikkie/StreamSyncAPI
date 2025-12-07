@@ -1,11 +1,15 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param } from '@nestjs/common';
 import { AccountService } from './account.service';
-import { CreateAccountDto } from './dto/create-account.dto';
-import { LoginDto } from './dto/login.dto';
+import { CreateAccountDto } from './dto-account/create-account.dto';
+import { LoginDto } from './dto-account/login.dto';
+import { AccountTokenService } from './token/account-token.service';
 
 @Controller('account')
 export class AccountController {
-  constructor(private readonly accountService: AccountService) {}
+  constructor(
+    private readonly accountService: AccountService,
+    private readonly tokenService: AccountTokenService,
+  ) {}
 
   @Post('register')
   create(@Body() dto: CreateAccountDto) {
@@ -15,5 +19,13 @@ export class AccountController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.accountService.login(dto);
+  }
+
+  @Get('verify/:token')
+  verify(@Param('token') token: string) {
+    return this.tokenService.verifyToken({
+      token,
+      token_type: 'EMAIL_VERIFICATION',
+    });
   }
 }
