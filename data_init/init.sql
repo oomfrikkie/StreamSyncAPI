@@ -102,6 +102,81 @@ CREATE TABLE IF NOT EXISTS profile_genre_preference (
     FOREIGN KEY (genre_id) REFERENCES genre(genre_id)
 );
 
+CREATE TABLE IF NOT EXISTS content (
+    content_id SERIAL PRIMARY KEY,
+    age_category_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    content_type VARCHAR(50) NOT NULL,      -- 'MOVIE' or 'EPISODE'
+    quality_id INT NOT NULL,
+
+    FOREIGN KEY (age_category_id) REFERENCES age_category(age_category_id),
+    FOREIGN KEY (quality_id) REFERENCES quality(quality_id)
+);
+
+CREATE TABLE IF NOT EXISTS movie (
+    movie_id SERIAL PRIMARY KEY,
+    content_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    duration INT NOT NULL,
+
+    FOREIGN KEY (content_id) REFERENCES content(content_id)
+);
+
+CREATE TABLE IF NOT EXISTS serie (
+    serie_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS season (
+    season_id SERIAL PRIMARY KEY,
+    serie_id INT NOT NULL,
+    season_number INT NOT NULL,
+
+    FOREIGN KEY (serie_id) REFERENCES serie(serie_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS episode (
+    episode_id SERIAL PRIMARY KEY,
+    content_id INT NOT NULL,
+    episode_number INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    duration_minutes INT NOT NULL,
+    season_id INT NOT NULL,
+
+    FOREIGN KEY (content_id) REFERENCES content(content_id),
+    FOREIGN KEY (season_id) REFERENCES season(season_id)
+);
+
+CREATE TABLE IF NOT EXISTS watchlist_item (
+    profile_id INT NOT NULL,
+    content_id INT NOT NULL,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (profile_id, content_id),
+
+    FOREIGN KEY (profile_id) REFERENCES profile(profile_id),
+    FOREIGN KEY (content_id) REFERENCES content(content_id)
+);
+
+CREATE TABLE IF NOT EXISTS viewing_session (
+    viewing_id SERIAL PRIMARY KEY,
+    profile_id INT NOT NULL,
+    content_id INT NOT NULL,
+    episode_id INT,
+    start_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    watched_seconds INT DEFAULT 0,
+    completed BOOLEAN DEFAULT FALSE,
+    last_position_seconds INT DEFAULT 0,
+    auto_continued_next BOOLEAN DEFAULT FALSE,
+
+    FOREIGN KEY (profile_id) REFERENCES profile(profile_id),
+    FOREIGN KEY (content_id) REFERENCES content(content_id),
+    FOREIGN KEY (episode_id) REFERENCES episode(episode_id)
+);
+
 -- 4. INSERTS IN SAFE FK ORDER
 
 INSERT INTO projectmembers (id, name) VALUES
@@ -149,6 +224,39 @@ INSERT INTO profile_genre_preference (profile_id, genre_id) VALUES
 (1, 2),
 (2, 1),
 (3, 3);
+
+INSERT INTO content (content_id, age_category_id, title, description, content_type, quality_id) VALUES
+(1, 3, 'Space Adventures S1E1', 'Pilot episode', 'EPISODE', 3),
+(2, 3, 'Space Adventures S1E2', 'Episode 2', 'EPISODE', 3),
+(3, 2, 'The Funny Movie', 'Comedy movie', 'MOVIE', 2),
+(4, 1, 'Kids Adventure', 'Fun animated movie for kids', 'MOVIE', 1);
+
+INSERT INTO movie (movie_id, content_id, name, duration) VALUES
+(1, 3, 'The Funny Movie', 95),
+(2, 4, 'Kids Adventure', 80);
+
+INSERT INTO serie (serie_id, name) VALUES
+(1, 'Space Adventures'),
+(2, 'Mystery Island');
+
+INSERT INTO season (season_id, serie_id, season_number) VALUES
+(1, 1, 1),
+(2, 1, 2),
+(3, 2, 1);
+
+INSERT INTO episode (episode_id, content_id, episode_number, name, duration_minutes, season_id) VALUES
+(1, 1, 1, 'Pilot', 45, 1),
+(2, 2, 2, 'Second Episode', 47, 1);
+
+INSERT INTO watchlist_item (profile_id, content_id) VALUES
+(1, 3),
+(1, 1),
+(2, 4);
+
+INSERT INTO viewing_session (viewing_id, profile_id, content_id, episode_id, watched_seconds, completed) VALUES
+(1, 1, 1, 1, 1200, FALSE),
+(2, 1, 3, NULL, 5400, TRUE),
+(3, 3, 4, NULL, 800, FALSE);
 
 -- Optional example tokens
 -- INSERT INTO account_token (token, token_type, account_id, expires_at)
