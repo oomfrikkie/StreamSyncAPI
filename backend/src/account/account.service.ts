@@ -21,6 +21,18 @@ export class AccountService {
   ) {}
 
   async create(dto: CreateAccountDto) {
+    if (!dto.email || !dto.password) {
+      throw new BadRequestException('Email and password are required');
+    }
+
+    const existing = await this.accountRepo.findOne({
+      where: { email: dto.email },
+    });
+
+    if (existing) {
+      throw new BadRequestException('An account with this email already exists');
+    }
+
     const hashed = await bcrypt.hash(dto.password, 10);
 
     const newAccount = this.accountRepo.create({
@@ -56,7 +68,7 @@ export class AccountService {
     if (!account) throw new UnauthorizedException('Invalid credentials');
 
     if (account.status === 'AWAITING_VERIFICATION') {
-      throw new UnauthorizedException('Account not verified');
+      throw new UnauthorizedException('Email has not been verified');
     }
 
     const match = await bcrypt.compare(dto.password, account.password_hash);
@@ -78,6 +90,10 @@ export class AccountService {
   }
 
   async requestPasswordReset(dto: ForgotPasswordDto) {
+    if (!dto.email) {
+      throw new BadRequestException('Email is required');
+    }
+
     const account = await this.accountRepo.findOne({
       where: { email: dto.email },
     });
@@ -87,7 +103,7 @@ export class AccountService {
     const tokenResult = await this.tokenService.createToken({
       token_type: 'PASSWORD_RESET',
       account_id: account.account_id,
-      expires_at: new Date(Date.now() + 1000 * 60 * 30), // 30 minutes
+      expires_at: new Date(Date.now() + 1000 * 60 * 30),
     });
 
     return {
@@ -98,6 +114,10 @@ export class AccountService {
   }
 
   async resetPassword(dto: ResetPasswordDto) {
+    if (!dto.new_password) {
+      throw new BadRequestException('New password is required');
+    }
+
     await this.tokenService.verifyToken({
       token: dto.token,
       token_type: 'PASSWORD_RESET',
