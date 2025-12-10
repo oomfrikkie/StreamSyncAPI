@@ -12,28 +12,30 @@ export default function Login() {
 
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
-    setErrorMessage("");
-    setBackendResponse(null);
+ const handleLogin = async () => {
+  setErrorMessage("");
+  setBackendResponse(null);
 
-    try {
-      const res = await axios.post("http://localhost:3000/account/login", {
-        email,
-        password
-      });
+  try {
+    const res = await axios.post("http://localhost:3000/account/login", {
+      email,
+      password
+    });
 
-      setBackendResponse(res.data);
+    setBackendResponse(res.data);
 
-      // redirect to profiles page
-      navigate("/profiles");
+    // SAVE ACCOUNT ID
+    localStorage.setItem("account_id", res.data.account_id);
 
-    } catch (error) {
-      console.error(error);
+    // REDIRECT
+    window.location.href = "/profiles";
 
-      const msg = error.response?.data?.message || "Login failed";
-      setErrorMessage(msg);
-    }
-  };
+  } catch (error) {
+    const msg = error.response?.data?.message || "Login failed";
+    setErrorMessage(msg);
+  }
+};
+
 
   return (
     <section className='login-form'>
