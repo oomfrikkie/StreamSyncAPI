@@ -17,28 +17,37 @@ export class ProfileService {
     private readonly accountRepo: Repository<Account>,
 
     @InjectRepository(AgeCategory)
-    private readonly ageCategoryRepo: Repository<AgeCategory>,
+    private readonly ageRepo: Repository<AgeCategory>,
   ) {}
 
   async create(dto: CreateProfileDto) {
+    // Make sure account exists
     const account = await this.accountRepo.findOne({
       where: { account_id: dto.account_id },
     });
-    if (!account) throw new NotFoundException('Account not found');
 
-    const ageCategory = await this.ageCategoryRepo.findOne({
+    if (!account) {
+      throw new NotFoundException('Account not found');
+    }
+
+    // Make sure age category exists
+    const ageCategory = await this.ageRepo.findOne({
       where: { age_category_id: dto.age_category_id },
     });
-    if (!ageCategory) throw new NotFoundException('Age category not found');
 
-    const profile = this.profileRepo.create({
+    if (!ageCategory) {
+      throw new NotFoundException('Age category not found');
+    }
+
+    // Create profile object
+    const newProfile = this.profileRepo.create({
       name: dto.name,
       image_url: dto.image_url ?? null,
-      account,
-      age_category: ageCategory,
+      account: account,
+      age_category: ageCategory, // EXACT NAME FROM ENTITY
     });
 
-    return this.profileRepo.save(profile);
+    return this.profileRepo.save(newProfile);
   }
 
   async getProfilesByAccount(accountId: number) {

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
 import './App.css'
 import Login from './pages/login/Login'
 import CreateAccount from './pages/createaccount/CreateAccount'
+import Profiles from './pages/profiles/Profiles'
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/create" element={<CreateAccount />} />
+          <Route path="/profiles" element={<Profiles />} />
+          
         </Routes>
       </main>
     </>
