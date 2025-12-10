@@ -58,7 +58,7 @@ export default function CreateAccount() {
   };
 
   return (
-    <section className='login-form'>
+    <section className='create-form'>
 
       {/* Input fields */}
       <label htmlFor="email">Email:</label>
