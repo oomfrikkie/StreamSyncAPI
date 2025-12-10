@@ -2,7 +2,7 @@
     display: flex;
     flex-direction: column;
     width: 80%;
-gap: 1rem;
+    gap: 1rem;
 }
 
 .login-form label{
@@ -12,7 +12,16 @@ gap: 1rem;
 .login-form button{
     background-color: red;
     padding: 1rem;
+    border-radius: 2rem;
 }
 .login-form button:hover{
     background-color: rgb(139, 1, 1);
+}
+
+.login-form input{
+    background-color: rgb(59, 59, 59);
+    border-radius: 2rem;
+    color: white;
+    padding: 1rem;
+    font-size: large;
 }
