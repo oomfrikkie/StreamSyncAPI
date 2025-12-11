@@ -6,11 +6,6 @@ import { CreateProfileDto } from './dto-profile/create-profile.dto';
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
-<<<<<<< HEAD
-  @Post('create')
-=======
-  @Post()
->>>>>>> origin/accountbranch
   createProfile(@Body() dto: CreateProfileDto) {
     return this.profileService.create(dto);
   }
