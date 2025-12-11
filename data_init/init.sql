@@ -258,6 +258,19 @@ INSERT INTO viewing_session (viewing_id, profile_id, content_id, episode_id, wat
 (2, 1, 3, NULL, 5400, TRUE),
 (3, 3, 4, NULL, 800, FALSE);
 
--- Optional example tokens
--- INSERT INTO account_token (token, token_type, account_id, expires_at)
--- VALUES ('demo-verification-token', 'EMAIL_VERIFICATION', 1, NOW() + INTERVAL '24 HOURS');
+SELECT setval('projectmembers_id_seq', (SELECT MAX(id) FROM projectmembers));
+SELECT setval('quality_quality_id_seq', (SELECT MAX(quality_id) FROM quality));
+SELECT setval('api_user_account_api_user_id_seq', (SELECT MAX(api_user_id) FROM api_user_account));
+SELECT setval('account_account_id_seq', (SELECT MAX(account_id) FROM account));
+SELECT setval('age_category_age_category_id_seq', (SELECT MAX(age_category_id) FROM age_category));
+SELECT setval('genre_genre_id_seq', (SELECT MAX(genre_id) FROM genre));
+SELECT setval('profile_profile_id_seq', (SELECT MAX(profile_id) FROM profile));
+SELECT setval('account_subscription_account_subscription_id_seq', (SELECT MAX(account_subscription_id) FROM account_subscription));
+SELECT setval('invitation_invitation_id_seq', (SELECT MAX(invitation_id) FROM invitation));
+SELECT setval('content_content_id_seq', (SELECT MAX(content_id) FROM content));
+SELECT setval('movie_movie_id_seq', (SELECT MAX(movie_id) FROM movie));
+SELECT setval('serie_serie_id_seq', (SELECT MAX(serie_id) FROM serie));
+SELECT setval('season_season_id_seq', (SELECT MAX(season_id) FROM season));
+SELECT setval('episode_episode_id_seq', (SELECT MAX(episode_id) FROM episode));
+SELECT setval('viewing_session_viewing_id_seq', (SELECT MAX(viewing_id) FROM viewing_session));
+
