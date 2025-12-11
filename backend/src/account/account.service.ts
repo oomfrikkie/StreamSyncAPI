@@ -21,6 +21,7 @@ export class AccountService {
   ) {}
 
   async create(dto: CreateAccountDto) {
+<<<<<<< HEAD
     if (!dto.email || !dto.password) {
       throw new BadRequestException('Email and password are required');
     }
@@ -80,6 +81,81 @@ export class AccountService {
     };
   }
 
+=======
+  if (!dto.email || !dto.password) {
+    throw new BadRequestException('Email and password are required');
+  }
+
+  // EMAIL FORMAT CHECK
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(dto.email)) {
+    throw new BadRequestException('Invalid email format. Must contain @ and/or .com');
+  }
+
+  const existing = await this.accountRepo.findOne({
+    where: { email: dto.email },
+  });
+
+  if (existing) {
+    throw new BadRequestException('An account with this email already exists');
+  }
+
+  const hashed = await bcrypt.hash(dto.password, 10);
+
+  const newAccount = this.accountRepo.create({
+    email: dto.email,
+    password_hash: hashed,
+    is_verified: false,
+    status: 'AWAITING_VERIFICATION',
+    failed_login_attempts: 0,
+  });
+
+  const savedAccount = await this.accountRepo.save(newAccount);
+
+  const tokenResult = await this.tokenService.createToken({
+    token_type: 'EMAIL_VERIFICATION',
+    account_id: savedAccount.account_id,
+    expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24),
+  });
+
+  return {
+    message: 'Account created',
+    account_id: savedAccount.account_id,
+    email: savedAccount.email,
+    verification_token: tokenResult.token,
+    verification_link: `/account/verify/${tokenResult.token}`,
+  };
+}
+
+
+  async login(dto: LoginDto) {
+  // EMAIL FORMAT CHECK
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(dto.email)) {
+    throw new UnauthorizedException('Invalid email format');
+  }
+
+  const account = await this.accountRepo.findOne({
+    where: { email: dto.email },
+  });
+
+  if (!account) throw new UnauthorizedException('Invalid credentials');
+
+  if (account.status === 'AWAITING_VERIFICATION') {
+    throw new UnauthorizedException('Email has not been verified');
+  }
+
+  const match = await bcrypt.compare(dto.password, account.password_hash);
+  if (!match) throw new UnauthorizedException('Invalid credentials');
+
+  return {
+    message: 'Login successful',
+    account_id: account.account_id,
+  };
+}
+
+
+>>>>>>> origin/accountbranch
   async findById(id: number) {
     const account = await this.accountRepo.findOne({
       where: { account_id: id },

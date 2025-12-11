@@ -8,8 +8,13 @@
 
 /* Profiles grid */
 .profile-list {
+<<<<<<< HEAD
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+=======
+  display: flex;
+  
+>>>>>>> origin/accountbranch
   gap: 1.5rem;
   margin-top: 2rem;
   padding: 0 1rem;
