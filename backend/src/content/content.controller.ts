@@ -5,7 +5,7 @@ import { ContentService } from './content.service';
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}
 
-  // Endpoint to save/pause viewing progress
+  // Save / pause viewing progress
   @Post('pause')
   async pause(
     @Body('profileId') profileId: number,
@@ -20,26 +20,25 @@ export class ContentController {
     return { message: 'Progress saved' };
   }
 
-  // Endpoint to resume viewing progress
+  // Resume viewing progress
   @Get('resume')
   async resume(
     @Query('profileId') profileId: number,
     @Query('contentId') contentId: number,
     @Query('episodeId') episodeId: number | null,
   ) {
-    const progress = await this.contentService.getViewingProgress(profileId, contentId, episodeId);
-    return progress;
+    return this.contentService.getViewingProgress(profileId, contentId, episodeId);
   }
 
-  // Endpoint to get all content
-  @Get()
+  // Get all content
+  @Get()                        // ← GET /content
   async getAllContent() {
     return this.contentService.getAllContent();
   }
 
-  // Endpoint to get content by ID
-  @Get('by-id')
-  async getContentById(@Query('contentId') contentId: number) {
-    return this.contentService.getContentById(contentId);
+  // Get content by ID
+  @Get(':id')                   // ← GET /content/5
+  async getContentById(@Query('id') id: number) {
+    return this.contentService.getContentById(id);
   }
 }
