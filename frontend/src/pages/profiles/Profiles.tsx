@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./profiles.css";
 
@@ -17,14 +18,20 @@ export default function Profiles() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
+<<<<<<< Updated upstream
   // Backend console output
   const [consoleOutput, setConsoleOutput] = useState<any>(null);
 
   // Get logged-in account ID
+=======
+  const [consoleOutput, setConsoleOutput] = useState<any>(null);
+
+  const navigate = useNavigate();
+
+>>>>>>> Stashed changes
   const storedId = localStorage.getItem("account_id");
   const account_id = storedId ? Number(storedId) : null;
 
-  // Load profiles
   useEffect(() => {
     if (!account_id) {
       setError("You are not logged in.");
@@ -46,7 +53,6 @@ export default function Profiles() {
       });
   }, [account_id]);
 
-  // Create profile
   const handleCreate = async () => {
     setError("");
     if (!account_id) {
@@ -100,7 +106,22 @@ export default function Profiles() {
             {/* PROFILE GRID */}
             <div className="profile-list">
               {profiles.map((p) => (
-                <div key={p.profile_id} className="profile-card">
+                <div
+                  key={p.profile_id}
+                  className="profile-card"
+                  onClick={() => {
+                    localStorage.setItem(
+                      "active_profile",
+                      JSON.stringify({
+                        profile_id: p.profile_id,
+                        age_category_id: p.age_category.age_category_id,
+                        name: p.name,
+                      })
+                    );
+
+                    navigate("/home");
+                  }}
+                >
                   <h3>{p.name}</h3>
                   <p>Age Category: {p.age_category_id}</p>
                 </div>

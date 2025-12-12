@@ -28,9 +28,17 @@ import { ProfileModule } from './profile/profile.module';
       synchronize: false,       // keep false in production
     }),
 
+<<<<<<< Updated upstream
     // Feature modules
     AccountModule,   // contains accounts + verification tokens
     ProfileModule,   // contains profile creation + queries
+=======
+    // ✅ Your modules
+    AccountModule,
+    AccountTokenModule,
+    ProfileModule,
+    ContentModule,   
+>>>>>>> Stashed changes
   ],
 
   controllers: [AppController],

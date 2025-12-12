@@ -3,6 +3,7 @@ import './App.css'
 import Login from './pages/login/Login'
 import CreateAccount from './pages/createaccount/CreateAccount'
 import Profiles from './pages/profiles/Profiles'
+import Home from './pages/home/Home'
 
 function App() {
   return (
@@ -20,7 +21,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/create" element={<CreateAccount />} />
           <Route path="/profiles" element={<Profiles />} />
-          
+          <Route path='/home' element={<Home />}/>
         </Routes>
       </main>
     </>

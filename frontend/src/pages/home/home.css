@@ -1,0 +1,41 @@
+.home-page {
+  padding: 2rem;
+  color: white;
+  min-height: 80vh;
+}
+
+.home-page h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.content-grid {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.content-card {
+  background: #181818;
+  padding: 1rem;
+  border-radius: 10px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.content-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 14px rgba(229, 9, 20, 0.4);
+}
+
+.content-card h3 {
+  margin-bottom: 0.5rem;
+}
+
+.content-card .type {
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.content-card .desc {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
