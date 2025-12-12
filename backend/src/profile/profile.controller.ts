@@ -6,11 +6,7 @@ import { CreateProfileDto } from './dto-profile/create-profile.dto';
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
-<<<<<<< Updated upstream
-  @Post('create')
-=======
-  @Post()
->>>>>>> Stashed changes
+@Post()
   createProfile(@Body() dto: CreateProfileDto) {
     return this.profileService.create(dto);
   }

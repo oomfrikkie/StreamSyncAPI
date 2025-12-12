@@ -25,6 +25,12 @@ export class AccountService {
       throw new BadRequestException('Email and password are required');
     }
 
+    // EMAIL FORMAT CHECK
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(dto.email)) {
+      throw new BadRequestException('Invalid email format. Must contain @ and/or .com');
+    }
+
     const existing = await this.accountRepo.findOne({
       where: { email: dto.email },
     });
@@ -61,6 +67,12 @@ export class AccountService {
   }
 
   async login(dto: LoginDto) {
+    // EMAIL FORMAT CHECK
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(dto.email)) {
+      throw new UnauthorizedException('Invalid email format');
+    }
+
     const account = await this.accountRepo.findOne({
       where: { email: dto.email },
     });

@@ -6,17 +6,17 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 import { AccountModule } from './account/account.module';
+import { AccountTokenModule } from './account/token/account-token.module';
 import { ProfileModule } from './profile/profile.module';
+import { ContentModule } from './content/content.module';
 
 @Module({
   imports: [
-    // Load environment variables globally
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '../.env',
     }),
 
-    // Database connection
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.POSTGRES_HOST,
@@ -24,23 +24,15 @@ import { ProfileModule } from './profile/profile.module';
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      autoLoadEntities: true,  // automatically loads all @Entity() classes
-      synchronize: false,       // keep false in production
+      autoLoadEntities: true,
+      synchronize: false,
     }),
 
-<<<<<<< Updated upstream
-    // Feature modules
-    AccountModule,   // contains accounts + verification tokens
-    ProfileModule,   // contains profile creation + queries
-=======
-    // ✅ Your modules
     AccountModule,
     AccountTokenModule,
     ProfileModule,
-    ContentModule,   
->>>>>>> Stashed changes
+    ContentModule,
   ],
-
   controllers: [AppController],
   providers: [AppService],
 })

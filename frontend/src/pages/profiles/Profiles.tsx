@@ -6,29 +6,25 @@ import "./profiles.css";
 interface Profile {
   profile_id: number;
   name: string;
-  age_category_id: number;
   image_url: string | null;
+  age_category: {
+    age_category_id: number;
+    name: string;
+  };
 }
 
 export default function Profiles() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [name, setName] = useState<string>("");
-  const [ageCategory, setAgeCategory] = useState<number>(1);
+  const [name, setName] = useState("");
+  const [ageCategory, setAgeCategory] = useState(1);
 
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-<<<<<<< Updated upstream
-  // Backend console output
-  const [consoleOutput, setConsoleOutput] = useState<any>(null);
-
-  // Get logged-in account ID
-=======
   const [consoleOutput, setConsoleOutput] = useState<any>(null);
 
   const navigate = useNavigate();
 
->>>>>>> Stashed changes
   const storedId = localStorage.getItem("account_id");
   const account_id = storedId ? Number(storedId) : null;
 
@@ -43,18 +39,18 @@ export default function Profiles() {
       .get(`http://localhost:3000/profile/account/${account_id}`)
       .then((res) => {
         setProfiles(res.data);
-        setConsoleOutput(res.data);
         setLoading(false);
       })
       .catch((err) => {
         setError(err.response?.data?.message || "Failed to load profiles");
-        setConsoleOutput(err.response?.data || err);
         setLoading(false);
       });
   }, [account_id]);
 
   const handleCreate = async () => {
     setError("");
+    setConsoleOutput(null);
+
     if (!account_id) {
       setError("You are not logged in.");
       return;
@@ -66,7 +62,7 @@ export default function Profiles() {
     }
 
     try {
-      const res = await axios.post("http://localhost:3000/profile/create", {
+      const res = await axios.post("http://localhost:3000/profile", {
         account_id,
         name,
         age_category_id: ageCategory,
@@ -79,8 +75,7 @@ export default function Profiles() {
       setName("");
       setAgeCategory(1);
     } catch (err: any) {
-      const msg = err.response?.data?.message || "Failed to create profile";
-      setError(msg);
+      setError(err.response?.data?.message || "Failed to create profile");
       setConsoleOutput(err.response?.data || err);
     }
   };
@@ -89,21 +84,13 @@ export default function Profiles() {
     <section className="profiles-page">
       <h2>Your Profiles</h2>
 
-      {/* Error message */}
       {error && <p className="error-box">{error}</p>}
 
-      {/* If not logged in */}
-      {!account_id && (
-        <button style={{ marginTop: "2rem" }}>Please Log In First</button>
-      )}
-
-      {/* Loading state */}
       {loading ? (
         <p style={{ color: "white" }}>Loading...</p>
       ) : (
         account_id && (
           <>
-            {/* PROFILE GRID */}
             <div className="profile-list">
               {profiles.map((p) => (
                 <div
@@ -118,19 +105,17 @@ export default function Profiles() {
                         name: p.name,
                       })
                     );
-
                     navigate("/home");
                   }}
                 >
                   <h3>{p.name}</h3>
-                  <p>Age Category: {p.age_category_id}</p>
+                  <p>Age Category: {p.age_category.name}</p>
                 </div>
               ))}
             </div>
 
             <hr />
 
-            {/* CREATE PROFILE */}
             <h3>Create New Profile</h3>
 
             <label>Name:</label>
@@ -155,7 +140,6 @@ export default function Profiles() {
         )
       )}
 
-      {/* BACKEND CONSOLE OUTPUT */}
       {consoleOutput && (
         <div className="console-box" style={{ marginTop: "3rem" }}>
           <h3>Backend Output</h3>
