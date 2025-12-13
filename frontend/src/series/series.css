@@ -1,0 +1,46 @@
+.series-page {
+  padding: 2rem;
+  color: white;
+}
+
+.series-title {
+  font-size: 2.4rem;
+  margin-bottom: 2rem;
+}
+
+.season-title {
+  font-size: 1.6rem;
+  margin: 1.5rem 0 1rem;
+}
+
+.season-row {
+  display: flex;
+  flex-direction: row;
+  overflow-x: scroll;
+  gap: 1rem;
+  
+}
+
+.episode-card {
+  background: #141414;
+  padding: 1rem;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.episode-card h3,
+.episode-card p {
+  color: white;
+}
+
+.episode-card button {
+  margin-top: 0.8rem;
+  background: #e50914;
+  border: none;
+  color: white;
+  padding: 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}

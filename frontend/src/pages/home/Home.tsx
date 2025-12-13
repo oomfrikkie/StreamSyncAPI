@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./home.css";
 
@@ -23,14 +24,88 @@ interface CurrentlyWatchingItem {
 }
 
 interface SeriesItem {
+  series_id: number;
   name: string;
 }
 
 export default function Home() {
+  const navigate = useNavigate();
+
   const [movies, setMovies] = useState<ContentItem[]>([]);
   const [series, setSeries] = useState<SeriesItem[]>([]);
   const [currentlyWatching, setCurrentlyWatching] = useState<CurrentlyWatchingItem[]>([]);
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
+
+  const [playingContentId, setPlayingContentId] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ---------------- TIMER ----------------
+
+  const startTimer = (startFrom: number) => {
+    stopTimer();
+    setElapsedSeconds(startFrom);
+
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds(prev => prev + 1);
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  // ---------------- API ACTIONS ----------------
+
+  const handlePlay = async (contentId: number) => {
+    if (!activeProfile) return;
+
+    await axios.post("http://localhost:3000/content/play", {
+      profileId: activeProfile.profile_id,
+      contentId,
+    });
+
+    setPlayingContentId(contentId);
+    startTimer(0);
+  };
+
+  const handlePause = async (contentId: number) => {
+    if (!activeProfile) return;
+
+    stopTimer();
+
+    await axios.post("http://localhost:3000/content/pause", {
+      profileId: activeProfile.profile_id,
+      contentId,
+      episodeId: null,
+      lastPositionSeconds: Math.floor(elapsedSeconds),
+      watchedSeconds: Math.floor(elapsedSeconds),
+      completed: false,
+      autoContinuedNext: false,
+    });
+
+    setPlayingContentId(null);
+  };
+
+  const handleResume = async (item: CurrentlyWatchingItem) => {
+    if (!activeProfile) return;
+
+    await axios.get("http://localhost:3000/content/resume", {
+      params: {
+        profileId: activeProfile.profile_id,
+        contentId: item.content_id,
+      },
+    });
+
+    setPlayingContentId(item.content_id);
+    startTimer(item.last_position_seconds);
+  };
+
+  // ---------------- INIT ----------------
 
   useEffect(() => {
     const storedProfile = localStorage.getItem("activeProfile");
@@ -39,45 +114,36 @@ export default function Home() {
     const profile: Profile = JSON.parse(storedProfile);
     setActiveProfile(profile);
 
-    // ▶️ Continue Watching
+    // Continue watching
     axios
       .get(`http://localhost:3000/content/currently-watching/${profile.profile_id}`)
-      .then((res) => setCurrentlyWatching(res.data))
+      .then(res => setCurrentlyWatching(res.data))
       .catch(() => setCurrentlyWatching([]));
 
-    // 🎬 Content by age
+    // Movies
     axios
       .get(`http://localhost:3000/content/by-age/${profile.age_category_id}`)
-      .then((res) => {
+      .then(res => {
         const allContent: ContentItem[] = res.data;
-
-        // Movies
         setMovies(allContent.filter(c => c.content_type === "MOVIE"));
-
-        // Series (deduced from episode titles)
-        const seriesSet = new Set<string>();
-
-        allContent
-          .filter(c => c.content_type === "EPISODE")
-          .forEach(ep => {
-            // crude but works with your data: "Space Adventures S1E1"
-            const seriesName = ep.title.split(" S")[0];
-            seriesSet.add(seriesName);
-          });
-
-        setSeries([...seriesSet].map(name => ({ name })));
       });
+
+    // Series (REAL series table)
+    axios
+      .get("http://localhost:3000/series")
+      .then(res => setSeries(res.data))
+      .catch(() => setSeries([]));
   }, []);
 
-  if (!activeProfile) {
-    return <p>No profile selected</p>;
-  }
+  if (!activeProfile) return <p>No profile selected</p>;
+
+  // ---------------- UI ----------------
 
   return (
     <section className="home">
       <h1>Welcome, {activeProfile.name}</h1>
 
-      {/* ▶️ CONTINUE WATCHING */}
+      {/* CONTINUE WATCHING */}
       {currentlyWatching.length > 0 && (
         <>
           <h2 className="section-title">Continue Watching</h2>
@@ -85,23 +151,34 @@ export default function Home() {
             {currentlyWatching.map(item => (
               <div key={item.content_id} className="content-card watching">
                 <h3>{item.title}</h3>
-                <p>
-                  Resume at {Math.floor(item.last_position_seconds / 60)} min
-                </p>
-                <button>Continue</button>
+                <p>Resume at {Math.floor(item.last_position_seconds / 60)} min</p>
+
+                <button
+                  onClick={() =>
+                    playingContentId === item.content_id
+                      ? handlePause(item.content_id)
+                      : handleResume(item)
+                  }
+                >
+                  {playingContentId === item.content_id ? "Pause" : "Resume"}
+                </button>
               </div>
             ))}
           </div>
         </>
       )}
 
-      {/* 📺 SERIES */}
+      {/* SERIES */}
       {series.length > 0 && (
         <>
           <h2 className="section-title">Series</h2>
           <div className="content-grid">
             {series.map(s => (
-              <div key={s.name} className="content-card">
+              <div
+                key={s.series_id}
+                className="content-card clickable"
+                onClick={() => navigate(`/series/${s.series_id}`)}
+              >
                 <h3>{s.name}</h3>
                 <button>View Series</button>
               </div>
@@ -110,14 +187,23 @@ export default function Home() {
         </>
       )}
 
-      {/* 🎥 MOVIES */}
+      {/* MOVIES */}
       <h2 className="section-title">Movies</h2>
       <div className="content-grid">
         {movies.map(movie => (
           <div key={movie.content_id} className="content-card">
             <h3>{movie.title}</h3>
             <p>{movie.description}</p>
-            <button>Play</button>
+
+            <button
+              onClick={() =>
+                playingContentId === movie.content_id
+                  ? handlePause(movie.content_id)
+                  : handlePlay(movie.content_id)
+              }
+            >
+              {playingContentId === movie.content_id ? "Pause" : "Play"}
+            </button>
           </div>
         ))}
       </div>

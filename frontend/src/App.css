@@ -4,6 +4,14 @@
     font-weight: bold;
 }
 
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: rgb(24, 24, 24);
+  min-height: 100%;
+}
+
 header{
     background-color: rgb(15, 15, 15);
     min-height: 10vh;
