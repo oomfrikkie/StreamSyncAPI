@@ -29,7 +29,7 @@ export class ContentController {
     );
   }
 
-  @Get('all')
+  @Get('')
   getAll() {
     return this.contentService.getAllContent();
   }

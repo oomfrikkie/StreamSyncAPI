@@ -109,16 +109,16 @@ CREATE TABLE IF NOT EXISTS movie (
     FOREIGN KEY (content_id) REFERENCES content(content_id)
 );
 
-CREATE TABLE IF NOT EXISTS serie (
-    serie_id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS series (
+    series_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS season (
     season_id SERIAL PRIMARY KEY,
-    serie_id INT NOT NULL,
+    series_id INT NOT NULL,
     season_number INT NOT NULL,
-    FOREIGN KEY (serie_id) REFERENCES serie(serie_id)
+    FOREIGN KEY (series_id) REFERENCES series(series_id)
 );
 
 CREATE TABLE IF NOT EXISTS episode (
@@ -211,11 +211,11 @@ INSERT INTO movie (movie_id, content_id, name, duration) VALUES
 (1, 3, 'The Funny Movie', 95),
 (2, 4, 'Kids Adventure', 80);
 
-INSERT INTO serie (serie_id, name) VALUES
+INSERT INTO series (series_id, name) VALUES
 (1, 'Space Adventures'),
 (2, 'Mystery Island');
 
-INSERT INTO season (season_id, serie_id, season_number) VALUES
+INSERT INTO season (season_id, series_id, season_number) VALUES
 (1, 1, 1),
 (2, 1, 2),
 (3, 2, 1);
@@ -245,7 +245,7 @@ SELECT setval('account_subscription_account_subscription_id_seq', (SELECT MAX(ac
 SELECT setval('invitation_invitation_id_seq', (SELECT MAX(invitation_id) FROM invitation));
 SELECT setval('content_content_id_seq', (SELECT MAX(content_id) FROM content));
 SELECT setval('movie_movie_id_seq', (SELECT MAX(movie_id) FROM movie));
-SELECT setval('serie_serie_id_seq', (SELECT MAX(serie_id) FROM serie));
+SELECT setval('series_series_id_seq', (SELECT MAX(series_id) FROM series));
 SELECT setval('season_season_id_seq', (SELECT MAX(season_id) FROM season));
 SELECT setval('episode_episode_id_seq', (SELECT MAX(episode_id) FROM episode));
 SELECT setval('viewing_session_viewing_session_id_seq', (SELECT MAX(viewing_session_id) FROM viewing_session));
