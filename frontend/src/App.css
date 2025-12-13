@@ -30,9 +30,18 @@ main{
     align-items: center;
 }
 
-.logo{
-    color: red;
+
+
+.logo-link {
+  display: inline-block;
+  text-decoration: none;
 }
+
+.logo {
+  color: red;
+  cursor: pointer;
+}
+
 
 a {
     color: white;
@@ -43,10 +52,11 @@ a:hover{
     color: rgb(206, 205, 205);
 }
 
-a.active {
-    border-bottom: 2px solid white;
-    padding-bottom: 2px; /* prevents layout shift */
+nav a.active {
+  border-bottom: 2px solid white;
+  padding-bottom: 2px;
 }
+
 
 
 nav{

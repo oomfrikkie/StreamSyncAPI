@@ -39,6 +39,8 @@ export default function Home() {
   const [playingContentId, setPlayingContentId] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
+  const [notLoggedIn, setNotLoggedIn] = useState(false);
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // ---------------- TIMER ----------------
@@ -108,8 +110,24 @@ export default function Home() {
   // ---------------- INIT ----------------
 
   useEffect(() => {
+    const accountId = localStorage.getItem("account_id");
+
+    // ❌ NOT LOGGED IN
+    if (!accountId) {
+      setNotLoggedIn(true);
+      setTimeout(() => {
+        navigate("/login");
+      }, 3000);
+      return;
+    }
+
     const storedProfile = localStorage.getItem("activeProfile");
-    if (!storedProfile) return;
+
+    // ❌ LOGGED IN BUT NO PROFILE
+    if (!storedProfile) {
+      navigate("/profiles");
+      return;
+    }
 
     const profile: Profile = JSON.parse(storedProfile);
     setActiveProfile(profile);
@@ -128,14 +146,25 @@ export default function Home() {
         setMovies(allContent.filter(c => c.content_type === "MOVIE"));
       });
 
-    // Series (REAL series table)
+    // Series
     axios
       .get("http://localhost:3000/series")
       .then(res => setSeries(res.data))
       .catch(() => setSeries([]));
-  }, []);
+  }, [navigate]);
 
-  if (!activeProfile) return <p>No profile selected</p>;
+  // ---------------- GUARDS ----------------
+
+  if (notLoggedIn) {
+    return (
+      <section className="home">
+        <h1>You need to log in</h1>
+        <p>Redirecting to login...</p>
+      </section>
+    );
+  }
+
+  if (!activeProfile) return null;
 
   // ---------------- UI ----------------
 

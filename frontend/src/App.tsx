@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink, useNavigate } from "react-router-dom";
 import "./App.css";
 import Login from "./pages/login/Login";
 import CreateAccount from "./pages/createaccount/CreateAccount";
@@ -7,13 +7,29 @@ import Home from "./pages/home/Home";
 import Series from "./series/Series";
 
 function App() {
+  const navigate = useNavigate();
   return (
     <>
       <header>
-        <h1 className="logo">StreamFlix</h1>
+        
+<NavLink
+  to="/profiles"
+  className="logo-link"
+  onClick={() => {
+    localStorage.removeItem("activeProfile");
+  }}
+>
+  <h1 className="logo">StreamFlix</h1>
+</NavLink>
+
+
+ 
         <nav>
           <NavLink to="/login">Login</NavLink>
-          <NavLink to="/create">Create Account</NavLink>
+          <NavLink to="/profiles" onClick={() => { localStorage.removeItem("activeProfile");}}>
+  Home
+</NavLink>
+
         </nav>
       </header>
 

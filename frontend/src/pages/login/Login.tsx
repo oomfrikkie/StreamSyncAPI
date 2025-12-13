@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, NavLink } from 'react-router-dom'
 import axios from 'axios'
 import './login.css'
 
@@ -56,6 +56,7 @@ export default function Login() {
       />
 
       <button onClick={handleLogin}>Log in</button>
+      <NavLink to="/create" >need an account?</NavLink>
 
       {errorMessage && (
         <p className="error-box">{errorMessage}</p>
