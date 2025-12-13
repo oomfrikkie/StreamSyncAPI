@@ -30,6 +30,7 @@ import { SeasonModule } from './season/season.modules';
       database: process.env.POSTGRES_DB,
       autoLoadEntities: true,
       synchronize: false,
+      logging: ['query', 'error']
     }),
 
     AccountModule,

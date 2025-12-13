@@ -1,5 +1,12 @@
+import { ApiProperty } from '@nestjs/swagger';
+
 export class CreateTokenDto {
-  token_type: string;       // e.g. 'EMAIL_VERIFICATION' or 'PASSWORD_RESET'
-  account_id: number;       // which account the token belongs to
-  expires_at: Date;         // when it expires
+  @ApiProperty()
+  token_type: string;
+
+  @ApiProperty()
+  account_id: number;
+
+  @ApiProperty()
+  expires_at: Date;
 }

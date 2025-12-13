@@ -7,26 +7,8 @@ import { PauseContentDto } from './dto-content/pause.dto';
 export class ContentService {
   constructor(private readonly dataSource: DataSource) {}
 
-  // ▶️ Start / create viewing session
   async startViewingSession(dto: PlayContentDto) {
-    const checkQuery = `
-      SELECT *
-      FROM viewing_session
-      WHERE profile_id = $1
-        AND content_id = $2
-      LIMIT 1;
-    `;
-
-    const existing = await this.dataSource.query(checkQuery, [
-      dto.profileId,
-      dto.contentId,
-    ]);
-
-    if (existing.length > 0) {
-      return existing[0];
-    }
-
-    const insertQuery = `
+    const query = `
       INSERT INTO viewing_session
         (
           profile_id,
@@ -38,10 +20,13 @@ export class ContentService {
           start_timestamp
         )
       VALUES ($1, $2, 0, 0, false, false, NOW())
+      ON CONFLICT (profile_id, content_id)
+      DO UPDATE SET
+        start_timestamp = NOW()
       RETURNING *;
     `;
 
-    const result = await this.dataSource.query(insertQuery, [
+    const result = await this.dataSource.query(query, [
       dto.profileId,
       dto.contentId,
     ]);
@@ -49,18 +34,26 @@ export class ContentService {
     return result[0];
   }
 
-  // ⏸ Save viewing progress (pause)
   async saveViewingProgress(dto: PauseContentDto) {
     const query = `
-      UPDATE viewing_session
-      SET
-        last_position_seconds = $3,
-        watched_seconds = $4,
-        completed = $5,
-        auto_continued_next = $6,
-        start_timestamp = NOW()
-      WHERE profile_id = $1
-        AND content_id = $2;
+      INSERT INTO viewing_session
+        (
+          profile_id,
+          content_id,
+          last_position_seconds,
+          watched_seconds,
+          completed,
+          auto_continued_next,
+          start_timestamp
+        )
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      ON CONFLICT (profile_id, content_id)
+      DO UPDATE SET
+        last_position_seconds = EXCLUDED.last_position_seconds,
+        watched_seconds = EXCLUDED.watched_seconds,
+        completed = EXCLUDED.completed,
+        auto_continued_next = EXCLUDED.auto_continued_next,
+        start_timestamp = NOW();
     `;
 
     await this.dataSource.query(query, [
@@ -73,7 +66,6 @@ export class ContentService {
     ]);
   }
 
-  // ▶️ Resume progress
   async getViewingProgress(profileId: number, contentId: number) {
     const query = `
       SELECT
@@ -96,12 +88,28 @@ export class ContentService {
     return result[0] || null;
   }
 
-  // Get ALL content
+  async getCurrentlyWatching(profileId: number) {
+    const query = `
+      SELECT
+        c.content_id,
+        c.title,
+        vs.last_position_seconds,
+        vs.watched_seconds,
+        vs.start_timestamp
+      FROM viewing_session vs
+      JOIN content c ON c.content_id = vs.content_id
+      WHERE vs.profile_id = $1
+        AND vs.completed = false
+      ORDER BY vs.start_timestamp DESC;
+    `;
+
+    return this.dataSource.query(query, [profileId]);
+  }
+
   async getAllContent() {
     return this.dataSource.query(`SELECT * FROM content`);
   }
 
-  // Get content by ID
   async getContentById(contentId: number) {
     const result = await this.dataSource.query(
       `SELECT * FROM content WHERE content_id = $1`,
@@ -111,7 +119,6 @@ export class ContentService {
     return result[0] || null;
   }
 
-  // Get content allowed for age category
   async getContentBasedOnAgeRating(ageCategoryId: number) {
     return this.dataSource.query(
       `
@@ -123,23 +130,4 @@ export class ContentService {
       [ageCategoryId]
     );
   }
-
-  async getCurrentlyWatching(profileId: number) {
-  const query = `
-    SELECT
-      c.content_id,
-      c.title,
-      vs.last_position_seconds,
-      vs.watched_seconds
-    FROM viewing_session vs
-    JOIN content c ON c.content_id = vs.content_id
-    WHERE vs.profile_id = $1
-      AND vs.completed = false
-      AND vs.watched_seconds > 0
-    ORDER BY vs.start_timestamp DESC;
-  `;
-
-  return this.dataSource.query(query, [profileId]);
-}
-
 }

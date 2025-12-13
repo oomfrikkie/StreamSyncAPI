@@ -1,54 +1,42 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
 echo "🐳 Starting Docker containers..."
 docker compose up -d
 
 echo "🕒 Waiting for Postgres to be ready..."
 
-CONTAINER_NAME="postgres_db"
+CONTAINER_NAME="$(docker compose ps -q postgres)"
 
-# Wait until Postgres is accepting connections
-until docker exec "$CONTAINER_NAME" pg_isready >/dev/null 2>&1; do
-    echo "Postgres not ready yet..."
-    sleep 2
+until docker exec "$CONTAINER_NAME" pg_isready -U postgres >/dev/null 2>&1; do
+  echo "Postgres not ready yet..."
+  sleep 2
 done
 
 echo "🚀 Postgres is ready!"
 
 # ----------------------------------------------------
-# START BACKEND
+# BACKEND
 # ----------------------------------------------------
 echo "🔥 Starting NestJS backend..."
-
-cd backend || { echo "❌ backend folder not found"; exit 1; }
-
-# Run backend in background
+cd backend || exit 1
 npm run start:dev &
 BACKEND_PID=$!
 
-echo "✔ Backend running (PID: $BACKEND_PID)"
-
 # ----------------------------------------------------
-# START FRONTEND
+# FRONTEND
 # ----------------------------------------------------
 echo "🎨 Starting React frontend..."
-
-cd ../frontend || { echo "❌ frontend folder not found"; exit 1; }
-
+cd ../frontend || exit 1
 npm run dev &
 FRONTEND_PID=$!
 
-echo "✔ Frontend running (PID: $FRONTEND_PID)"
-
-# ----------------------------------------------------
-# KEEP SCRIPT ALIVE
-# ----------------------------------------------------
 echo ""
-echo "🚀 StreamSyncAPI is fully running:"
+echo "🚀 StreamFlix running:"
 echo "   ➤ Backend:  http://localhost:3000"
+echo "   ➤ Swagger:  http://localhost:3000/api"
 echo "   ➤ Frontend: http://localhost:5173"
 echo ""
-echo "Press Ctrl + C to stop both."
+echo "Press Ctrl + C to stop."
 
-# Wait so the script doesn't exit
 wait
