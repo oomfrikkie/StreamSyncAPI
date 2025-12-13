@@ -1,5 +1,3 @@
--- 1. BASE TABLES (no dependencies)
-
 CREATE TABLE IF NOT EXISTS projectmembers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL
@@ -12,9 +10,9 @@ CREATE TABLE IF NOT EXISTS quality (
 );
 
 CREATE TABLE IF NOT EXISTS api_user_account (
-    api_user_id SERIAL PRIMARY KEY, 
+    api_user_id SERIAL PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
-    description TEXT, 
+    description TEXT,
     is_active BOOLEAN DEFAULT TRUE
 );
 
@@ -29,7 +27,7 @@ CREATE TABLE IF NOT EXISTS account (
 );
 
 CREATE TABLE IF NOT EXISTS age_category (
-    age_category_id SERIAL PRIMARY KEY, 
+    age_category_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     guidelines_text TEXT NOT NULL
 );
@@ -39,22 +37,17 @@ CREATE TABLE IF NOT EXISTS genre (
     name VARCHAR(100) NOT NULL
 );
 
--- 2. TOKEN TABLE (replaces email + password reset enums)
-
 CREATE TABLE IF NOT EXISTS account_token (
     token_id SERIAL PRIMARY KEY,
     token VARCHAR(255) NOT NULL,
-    token_type VARCHAR(50) NOT NULL,      -- "EMAIL_VERIFICATION" or "PASSWORD_RESET"
+    token_type VARCHAR(50) NOT NULL,
     account_id INT NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     used_at TIMESTAMP,
     is_used BOOLEAN DEFAULT FALSE,
-
     FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE CASCADE
 );
-
--- 3. DEPENDENT TABLES
 
 CREATE TABLE IF NOT EXISTS profile (
     profile_id SERIAL PRIMARY KEY,
@@ -62,7 +55,6 @@ CREATE TABLE IF NOT EXISTS profile (
     age_category_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
     image_url VARCHAR(500),
-
     FOREIGN KEY (account_id) REFERENCES account(account_id),
     FOREIGN KEY (age_category_id) REFERENCES age_category(age_category_id)
 );
@@ -71,23 +63,21 @@ CREATE TABLE IF NOT EXISTS account_subscription (
     account_subscription_id SERIAL PRIMARY KEY,
     account_id INT NOT NULL,
     quality_id INT NOT NULL,
-    start_date DATE DEFAULT CURRENT_DATE, 
-    end_date DATE, 
-    is_trial BOOLEAN DEFAULT FALSE, 
-
+    start_date DATE DEFAULT CURRENT_DATE,
+    end_date DATE,
+    is_trial BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (account_id) REFERENCES account(account_id),
     FOREIGN KEY (quality_id) REFERENCES quality(quality_id)
 );
 
 CREATE TABLE IF NOT EXISTS invitation (
     invitation_id SERIAL PRIMARY KEY,
-    inviter_account_id INT NOT NULL, 
+    inviter_account_id INT NOT NULL,
     invitee_account_id INT NOT NULL,
     status VARCHAR(50) DEFAULT 'PENDING',
     sent_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     accepted_timestamp TIMESTAMP,
     discount_expiry_date DATE,
-
     FOREIGN KEY (inviter_account_id) REFERENCES account(account_id),
     FOREIGN KEY (invitee_account_id) REFERENCES account(account_id)
 );
@@ -95,9 +85,7 @@ CREATE TABLE IF NOT EXISTS invitation (
 CREATE TABLE IF NOT EXISTS profile_genre_preference (
     profile_id INT NOT NULL,
     genre_id INT NOT NULL,
-
     PRIMARY KEY (profile_id, genre_id),
-
     FOREIGN KEY (profile_id) REFERENCES profile(profile_id),
     FOREIGN KEY (genre_id) REFERENCES genre(genre_id)
 );
@@ -107,9 +95,8 @@ CREATE TABLE IF NOT EXISTS content (
     age_category_id INT NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    content_type VARCHAR(50) NOT NULL,      -- 'MOVIE' or 'EPISODE'
+    content_type VARCHAR(50) NOT NULL,
     quality_id INT NOT NULL,
-
     FOREIGN KEY (age_category_id) REFERENCES age_category(age_category_id),
     FOREIGN KEY (quality_id) REFERENCES quality(quality_id)
 );
@@ -119,7 +106,6 @@ CREATE TABLE IF NOT EXISTS movie (
     content_id INT NOT NULL,
     name VARCHAR(255) NOT NULL,
     duration INT NOT NULL,
-
     FOREIGN KEY (content_id) REFERENCES content(content_id)
 );
 
@@ -128,15 +114,12 @@ CREATE TABLE IF NOT EXISTS serie (
     name VARCHAR(255) NOT NULL
 );
 
-
 CREATE TABLE IF NOT EXISTS season (
     season_id SERIAL PRIMARY KEY,
     serie_id INT NOT NULL,
     season_number INT NOT NULL,
-
     FOREIGN KEY (serie_id) REFERENCES serie(serie_id)
 );
-
 
 CREATE TABLE IF NOT EXISTS episode (
     episode_id SERIAL PRIMARY KEY,
@@ -145,7 +128,6 @@ CREATE TABLE IF NOT EXISTS episode (
     name VARCHAR(255) NOT NULL,
     duration_minutes INT NOT NULL,
     season_id INT NOT NULL,
-
     FOREIGN KEY (content_id) REFERENCES content(content_id),
     FOREIGN KEY (season_id) REFERENCES season(season_id)
 );
@@ -154,35 +136,29 @@ CREATE TABLE IF NOT EXISTS watchlist_item (
     profile_id INT NOT NULL,
     content_id INT NOT NULL,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
     PRIMARY KEY (profile_id, content_id),
-
     FOREIGN KEY (profile_id) REFERENCES profile(profile_id),
     FOREIGN KEY (content_id) REFERENCES content(content_id)
 );
 
 CREATE TABLE IF NOT EXISTS viewing_session (
-    viewing_id SERIAL PRIMARY KEY,
+    viewing_session_id SERIAL PRIMARY KEY,
     profile_id INT NOT NULL,
     content_id INT NOT NULL,
-    episode_id INT,
-    start_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    watched_seconds INT DEFAULT 0,
-    completed BOOLEAN DEFAULT FALSE,
-    last_position_seconds INT DEFAULT 0,
-    auto_continued_next BOOLEAN DEFAULT FALSE,
-
+    last_position_seconds INT NOT NULL DEFAULT 0,
+    watched_seconds INT NOT NULL DEFAULT 0,
+    completed BOOLEAN NOT NULL DEFAULT FALSE,
+    auto_continued_next BOOLEAN NOT NULL DEFAULT FALSE,
+    start_timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT unique_profile_content UNIQUE (profile_id, content_id),
     FOREIGN KEY (profile_id) REFERENCES profile(profile_id),
-    FOREIGN KEY (content_id) REFERENCES content(content_id),
-    FOREIGN KEY (episode_id) REFERENCES episode(episode_id)
+    FOREIGN KEY (content_id) REFERENCES content(content_id)
 );
 
--- 4. INSERTS IN SAFE FK ORDER
-
 INSERT INTO projectmembers (id, name) VALUES
-(1, 'Felix'),  
-(2, 'Iarina'),   
-(3, 'Derjen');   
+(1, 'Felix'),
+(2, 'Iarina'),
+(3, 'Derjen');
 
 INSERT INTO quality (quality_id, name, monthly_value) VALUES
 (1, 'SD', 10.0),
@@ -253,10 +229,10 @@ INSERT INTO watchlist_item (profile_id, content_id) VALUES
 (1, 1),
 (2, 4);
 
-INSERT INTO viewing_session (viewing_id, profile_id, content_id, episode_id, watched_seconds, completed) VALUES
-(1, 1, 1, 1, 1200, FALSE),
-(2, 1, 3, NULL, 5400, TRUE),
-(3, 3, 4, NULL, 800, FALSE);
+INSERT INTO viewing_session (profile_id, content_id, last_position_seconds, watched_seconds, completed) VALUES
+(1, 1, 1200, 1200, FALSE),
+(1, 3, 5400, 5400, TRUE),
+(3, 4, 800, 800, FALSE);
 
 SELECT setval('projectmembers_id_seq', (SELECT MAX(id) FROM projectmembers));
 SELECT setval('quality_quality_id_seq', (SELECT MAX(quality_id) FROM quality));
@@ -272,4 +248,4 @@ SELECT setval('movie_movie_id_seq', (SELECT MAX(movie_id) FROM movie));
 SELECT setval('serie_serie_id_seq', (SELECT MAX(serie_id) FROM serie));
 SELECT setval('season_season_id_seq', (SELECT MAX(season_id) FROM season));
 SELECT setval('episode_episode_id_seq', (SELECT MAX(episode_id) FROM episode));
-SELECT setval('viewing_session_viewing_id_seq', (SELECT MAX(viewing_id) FROM viewing_session));
+SELECT setval('viewing_session_viewing_session_id_seq', (SELECT MAX(viewing_session_id) FROM viewing_session));

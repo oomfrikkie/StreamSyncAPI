@@ -1,60 +1,89 @@
 import { Injectable } from '@nestjs/common';
-import { AgeCategory } from 'src/age-category/age-category.entity';
 import { DataSource } from 'typeorm';
+import { PlayContentDto } from './dto-content/play.dto';
+import { PauseContentDto } from './dto-content/pause.dto';
 
 @Injectable()
 export class ContentService {
   constructor(private readonly dataSource: DataSource) {}
 
-  // Save or update viewing progress (pause)
-  async saveViewingProgress(
-    profileId: number,
-    contentId: number,
-    episodeId: number | null,
-    lastPositionSeconds: number,
-    watchedSeconds: number,
-    completed: boolean,
-    autoContinuedNext: boolean = false
-  ) {
-    const query = `
-      INSERT INTO viewing_session 
-        (profile_id, content_id, episode_id, last_position_seconds, watched_seconds, completed, auto_continued_next)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (profile_id, content_id, episode_id)
-      DO UPDATE SET 
-        last_position_seconds = $4,
-        watched_seconds = $5,
-        completed = $6,
-        auto_continued_next = $7,
-        start_timestamp = NOW();
-    `;
-
-    await this.dataSource.query(query, [
-      profileId,
-      contentId,
-      episodeId,
-      lastPositionSeconds,
-      watchedSeconds,
-      completed,
-      autoContinuedNext
-    ]);
-  }
-
-  // Resume progress
-  async getViewingProgress(
-    profileId: number,
-    contentId: number,
-    episodeId: number | null
-  ) {
-    const query = `
-      SELECT last_position_seconds, watched_seconds, completed, auto_continued_next
+  // ▶️ Start / create viewing session
+  async startViewingSession(dto: PlayContentDto) {
+    const checkQuery = `
+      SELECT *
       FROM viewing_session
       WHERE profile_id = $1
         AND content_id = $2
-        AND (
-          ($3 IS NULL AND episode_id IS NULL)
-          OR (episode_id = $3)
+      LIMIT 1;
+    `;
+
+    const existing = await this.dataSource.query(checkQuery, [
+      dto.profileId,
+      dto.contentId,
+    ]);
+
+    if (existing.length > 0) {
+      return existing[0];
+    }
+
+    const insertQuery = `
+      INSERT INTO viewing_session
+        (
+          profile_id,
+          content_id,
+          last_position_seconds,
+          watched_seconds,
+          completed,
+          auto_continued_next,
+          start_timestamp
         )
+      VALUES ($1, $2, 0, 0, false, false, NOW())
+      RETURNING *;
+    `;
+
+    const result = await this.dataSource.query(insertQuery, [
+      dto.profileId,
+      dto.contentId,
+    ]);
+
+    return result[0];
+  }
+
+  // ⏸ Save viewing progress (pause)
+  async saveViewingProgress(dto: PauseContentDto) {
+    const query = `
+      UPDATE viewing_session
+      SET
+        last_position_seconds = $3,
+        watched_seconds = $4,
+        completed = $5,
+        auto_continued_next = $6,
+        start_timestamp = NOW()
+      WHERE profile_id = $1
+        AND content_id = $2;
+    `;
+
+    await this.dataSource.query(query, [
+      dto.profileId,
+      dto.contentId,
+      dto.lastPositionSeconds,
+      dto.watchedSeconds,
+      dto.completed,
+      dto.autoContinuedNext,
+    ]);
+  }
+
+  // ▶️ Resume progress
+  async getViewingProgress(profileId: number, contentId: number) {
+    const query = `
+      SELECT
+        last_position_seconds,
+        watched_seconds,
+        completed,
+        auto_continued_next
+      FROM viewing_session
+      WHERE profile_id = $1
+        AND content_id = $2
       ORDER BY start_timestamp DESC
       LIMIT 1;
     `;
@@ -62,7 +91,6 @@ export class ContentService {
     const result = await this.dataSource.query(query, [
       profileId,
       contentId,
-      episodeId
     ]);
 
     return result[0] || null;
@@ -70,7 +98,7 @@ export class ContentService {
 
   // Get ALL content
   async getAllContent() {
-    return await this.dataSource.query(`SELECT * FROM content`);
+    return this.dataSource.query(`SELECT * FROM content`);
   }
 
   // Get content by ID
@@ -83,18 +111,16 @@ export class ContentService {
     return result[0] || null;
   }
 
-async getContentBasedOnAgeRating(ageCategoryId: number) {
-  console.log('AGE CATEGORY ID:', ageCategoryId);
-  return this.dataSource.query(
-    `
-    SELECT *
-    FROM content
-    WHERE age_category_id <= $1
-    ORDER BY age_category_id DESC
-    `,
-    [ageCategoryId]
-  );
-}
-
-
+  // Get content allowed for age category
+  async getContentBasedOnAgeRating(ageCategoryId: number) {
+    return this.dataSource.query(
+      `
+      SELECT *
+      FROM content
+      WHERE age_category_id <= $1
+      ORDER BY age_category_id DESC
+      `,
+      [ageCategoryId]
+    );
+  }
 }

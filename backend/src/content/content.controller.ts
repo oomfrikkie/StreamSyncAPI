@@ -1,35 +1,33 @@
 import { Controller, Post, Body, Get, Query, Param } from '@nestjs/common';
 import { ContentService } from './content.service';
+import { PlayContentDto } from './dto-content/play.dto';
+import { PauseContentDto } from './dto-content/pause.dto';
 
 @Controller('content')
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}
 
-  // Save / pause viewing progress
+  @Post('play')
+  async play(@Body() dto: PlayContentDto) {
+    return this.contentService.startViewingSession(dto);
+  }
+
   @Post('pause')
-  async pause(
-    @Body('profileId') profileId: number,
-    @Body('contentId') contentId: number,
-    @Body('episodeId') episodeId: number | null,
-    @Body('lastPositionSeconds') lastPositionSeconds: number,
-    @Body('watchedSeconds') watchedSeconds: number,
-    @Body('completed') completed: boolean,
-    @Body('autoContinuedNext') autoContinuedNext: boolean = false,
-  ) {
-    await this.contentService.saveViewingProgress(profileId, contentId, episodeId, lastPositionSeconds, watchedSeconds, completed, autoContinuedNext);
+  async pause(@Body() dto: PauseContentDto) {
+    await this.contentService.saveViewingProgress(dto);
     return { message: 'Progress saved' };
   }
 
-  // Resume viewing progress
   @Get('resume')
   async resume(
-    @Query('profileId') profileId: number,
-    @Query('contentId') contentId: number,
-    @Query('episodeId') episodeId: number | null,
+    @Query('profileId') profileId: string,
+    @Query('contentId') contentId: string,
   ) {
-    return this.contentService.getViewingProgress(profileId, contentId, episodeId);
+    return this.contentService.getViewingProgress(
+      Number(profileId),
+      Number(contentId),
+    );
   }
-
 
   @Get('all')
   getAll() {
@@ -48,5 +46,3 @@ export class ContentController {
     );
   }
 }
-
-
