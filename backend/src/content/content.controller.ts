@@ -45,4 +45,10 @@ export class ContentController {
       Number(ageCategoryId)
     );
   }
+
+  @Get('currently-watching/:profileId')
+async currentlyWatching(@Param('profileId') profileId: string) {
+  return this.contentService.getCurrentlyWatching(Number(profileId));
+}
+
 }

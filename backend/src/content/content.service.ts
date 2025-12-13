@@ -123,4 +123,23 @@ export class ContentService {
       [ageCategoryId]
     );
   }
+
+  async getCurrentlyWatching(profileId: number) {
+  const query = `
+    SELECT
+      c.content_id,
+      c.title,
+      vs.last_position_seconds,
+      vs.watched_seconds
+    FROM viewing_session vs
+    JOIN content c ON c.content_id = vs.content_id
+    WHERE vs.profile_id = $1
+      AND vs.completed = false
+      AND vs.watched_seconds > 0
+    ORDER BY vs.start_timestamp DESC;
+  `;
+
+  return this.dataSource.query(query, [profileId]);
+}
+
 }

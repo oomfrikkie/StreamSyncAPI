@@ -98,7 +98,7 @@ export default function Profiles() {
                   className="profile-card"
                   onClick={() => {
                     localStorage.setItem(
-                      "active_profile",
+                      "activeProfile",
                       JSON.stringify({
                         profile_id: p.profile_id,
                         age_category_id: p.age_category.age_category_id,
