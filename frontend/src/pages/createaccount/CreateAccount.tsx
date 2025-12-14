@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import './create.css'
 
 export default function CreateAccount() {
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +34,7 @@ export default function CreateAccount() {
       setBackendResponse(res.data);
       setToken(res.data.verification_token);
 
-    } catch (err) {
+    } catch (err: any) {
       let msg = "Registration failed";
 
       if (err.response?.data?.message) {
@@ -47,10 +49,21 @@ export default function CreateAccount() {
     if (!token) return;
 
     try {
-      const res = await axios.get(`http://localhost:3000/account/verify/${token}`);
+      const res = await axios.get(
+        `http://localhost:3000/account/verify/${token}`
+      );
+
       setVerifiedMessage(res.data.message);
 
-    } catch (err) {
+      // 🔒 ensure clean state
+      sessionStorage.clear();
+
+      // ➜ go to login after verification
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+
+    } catch (err: any) {
       let msg = "Verification failed";
 
       if (err.response?.data?.message) {
@@ -64,7 +77,6 @@ export default function CreateAccount() {
   return (
     <section className='create-form'>
 
-      {/* Input fields */}
       <label htmlFor="firstName">First name:</label>
       <input
         type="text"
@@ -98,12 +110,10 @@ export default function CreateAccount() {
 
       <button onClick={handleRegister}>Create Account</button>
 
-      {/* Error Display */}
       {errorMessage && (
         <p className="error-box">{errorMessage}</p>
       )}
 
-      {/* Backend Response UI */}
       {backendResponse && (
         <div className="console-box">
           <h3>Backend Response</h3>

@@ -30,7 +30,6 @@ export default function Account() {
   const accountId = sessionStorage.getItem("account_id");
 
   // ---------------- INIT ----------------
-console.log("ACCOUNT ID:", sessionStorage.getItem("account_id"));
 
   useEffect(() => {
     if (!accountId) {
@@ -62,14 +61,20 @@ console.log("ACCOUNT ID:", sessionStorage.getItem("account_id"));
         { email: account.email }
       );
 
-      setMessage("Password reset link generated. Check console / email.");
-      console.log(res.data);
+      // 🔐 store reset token in sessionStorage
+      sessionStorage.setItem("reset_token", res.data.reset_token);
+
+      // ➜ go to reset password page
+      navigate("/resetpassword");
+
     } catch {
       setMessage("Failed to request password reset");
     }
   };
 
-  if (!account) return <p style={{ color: "white" }}>Loading account...</p>;
+  if (!account) {
+    return <p style={{ color: "white" }}>Loading account...</p>;
+  }
 
   // ---------------- UI ----------------
 

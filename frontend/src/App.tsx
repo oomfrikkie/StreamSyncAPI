@@ -12,6 +12,7 @@ import Profiles from "./pages/profiles/Profiles";
 import Home from "./pages/home/Home";
 import Series from "./series/Series";
 import Account from "./pages/account/Account";
+import ResetPassword from "./pages/resetpassword/ResetPassword";
 
 function App() {
   const navigate = useNavigate();
@@ -62,6 +63,7 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/series/:seriesId" element={<Series />} />
           <Route path="/account" element={<Account />}/>
+          <Route path="/resetpassword" element={<ResetPassword />}/>
         </Routes>
       </main>
     </>
