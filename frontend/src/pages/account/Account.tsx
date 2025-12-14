@@ -76,6 +76,18 @@ export default function Account() {
     return <p style={{ color: "white" }}>Loading account...</p>;
   }
 
+  const handleDeleteProfile = async (profileId: number) => {
+  if (!confirm("Delete this profile?")) return;
+
+  try {
+    await axios.delete(`http://localhost:3000/profile/${profileId}`);
+    setProfiles(prev => prev.filter(p => p.profile_id !== profileId));
+  } catch {
+    alert("Failed to delete profile");
+  }
+};
+
+
   // ---------------- UI ----------------
 
   return (
@@ -114,6 +126,11 @@ export default function Account() {
               <div key={p.profile_id} className="profile-card">
                 <h3>{p.name}</h3>
                 <p>Age Category: {p.age_category.name}</p>
+
+                 <button
+        className="danger-btn"
+        onClick={() => handleDeleteProfile(p.profile_id)}
+      >Delete</button>
               </div>
             ))}
           </div>

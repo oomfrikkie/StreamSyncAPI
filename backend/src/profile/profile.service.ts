@@ -73,4 +73,19 @@ return {
       relations: ['account', 'age_category'],
     });
   }
+
+  
+async delete(profileId: number) {
+  const profile = await this.profileRepo.findOne({
+    where: { profile_id: profileId },
+  });
+
+  if (!profile) {
+    throw new NotFoundException('Profile not found');
+  }
+
+  await this.profileRepo.remove(profile);
+  return { message: 'Profile deleted' };
+}
+
 }
