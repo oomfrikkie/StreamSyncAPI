@@ -7,6 +7,9 @@ export default function CreateAccount() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+
   const [backendResponse, setBackendResponse] = useState(null);
   const [token, setToken] = useState(null);
 
@@ -21,7 +24,9 @@ export default function CreateAccount() {
     try {
       const res = await axios.post("http://localhost:3000/account/register", {
         email,
-        password
+        password,
+        first_name: firstName,
+        last_name: lastName,
       });
 
       setBackendResponse(res.data);
@@ -31,7 +36,6 @@ export default function CreateAccount() {
       let msg = "Registration failed";
 
       if (err.response?.data?.message) {
-        // Backend returns clear message
         msg = err.response.data.message;
       }
 
@@ -61,6 +65,22 @@ export default function CreateAccount() {
     <section className='create-form'>
 
       {/* Input fields */}
+      <label htmlFor="firstName">First name:</label>
+      <input
+        type="text"
+        id="firstName"
+        value={firstName}
+        onChange={(e) => setFirstName(e.target.value)}
+      />
+
+      <label htmlFor="lastName">Last name:</label>
+      <input
+        type="text"
+        id="lastName"
+        value={lastName}
+        onChange={(e) => setLastName(e.target.value)}
+      />
+
       <label htmlFor="email">Email:</label>
       <input 
         type="text"

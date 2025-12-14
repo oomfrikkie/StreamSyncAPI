@@ -18,13 +18,16 @@ CREATE TABLE IF NOT EXISTS api_user_account (
 
 CREATE TABLE IF NOT EXISTS account (
     account_id SERIAL PRIMARY KEY,
-    email VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     is_verified BOOLEAN DEFAULT FALSE,
     status VARCHAR(50) DEFAULT 'ACTIVE',
     failed_login_attempts INT DEFAULT 0,
     created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 CREATE TABLE IF NOT EXISTS age_category (
     age_category_id SERIAL PRIMARY KEY,
@@ -172,10 +175,12 @@ INSERT INTO quality VALUES
 INSERT INTO api_user_account VALUES
 (1, 'api_streamflix', 'Technical API user', TRUE);
 
-INSERT INTO account (email, password_hash, is_verified, status, failed_login_attempts) VALUES
-('alice@example.com', 'hash_alice', TRUE, 'ACTIVE', 0),
-('bob@example.com', 'hash_bob', FALSE, 'ACTIVE', 0),
-('carol@example.com', 'hash_carol', TRUE, 'BLOCKED', 3);
+INSERT INTO account (email, first_name, last_name, password_hash, is_verified, status, failed_login_attempts
+) VALUES
+('alice@example.com', 'Alice', 'Johnson', 'hash_alice', TRUE, 'ACTIVE', 0),
+('bob@example.com', 'Bob', 'Smith', 'hash_bob', FALSE, 'ACTIVE', 0),
+('carol@example.com', 'Carol', 'Williams', 'hash_carol', TRUE, 'BLOCKED', 3);
+
 
 INSERT INTO age_category VALUES
 (1, 'Child', 'No violence, fear, or coarse language'),

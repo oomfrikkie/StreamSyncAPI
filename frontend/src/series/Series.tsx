@@ -74,7 +74,7 @@ export default function Series() {
   };
 
   useEffect(() => {
-    const storedProfile = localStorage.getItem("activeProfile");
+    const storedProfile = sessionStorage.getItem("activeProfile");
     if (!storedProfile || !seriesId) return;
 
     setActiveProfile(JSON.parse(storedProfile));

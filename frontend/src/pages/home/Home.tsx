@@ -110,7 +110,7 @@ export default function Home() {
   // ---------------- INIT ----------------
 
   useEffect(() => {
-    const accountId = localStorage.getItem("account_id");
+    const accountId = sessionStorage.getItem("account_id");
 
     // ❌ NOT LOGGED IN
     if (!accountId) {
@@ -121,7 +121,7 @@ export default function Home() {
       return;
     }
 
-    const storedProfile = localStorage.getItem("activeProfile");
+    const storedProfile = sessionStorage.getItem("activeProfile");
 
     // ❌ LOGGED IN BUT NO PROFILE
     if (!storedProfile) {

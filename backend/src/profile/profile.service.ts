@@ -47,7 +47,18 @@ export class ProfileService {
       age_category: ageCategory, // EXACT NAME FROM ENTITY
     });
 
-    return this.profileRepo.save(newProfile);
+    const saved = await this.profileRepo.save(newProfile);
+
+return {
+  profile_id: saved.profile_id,
+  name: saved.name,
+  image_url: saved.image_url,
+  age_category: {
+    age_category_id: ageCategory.age_category_id,
+    name: ageCategory.name,
+  },
+};
+
   }
 
   async getProfilesByAccount(accountId: number) {

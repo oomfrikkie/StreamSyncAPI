@@ -20,21 +20,26 @@ export default function Profiles() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [consoleOutput, setConsoleOutput] = useState<any>(null);
 
   const navigate = useNavigate();
 
-  const storedId = localStorage.getItem("account_id");
+  // ✅ sessionStorage instead of localStorage
+  const storedId = sessionStorage.getItem("account_id");
   const account_id = storedId ? Number(storedId) : null;
 
   useEffect(() => {
     if (!account_id) {
       setError("You are not logged in.");
       setLoading(false);
+       setTimeout(() => {
+        navigate("/login");
+      }, 3000);
       return;
     }
+   
 
+    
     axios
       .get(`http://localhost:3000/profile/account/${account_id}`)
       .then((res) => {
@@ -97,7 +102,8 @@ export default function Profiles() {
                   key={p.profile_id}
                   className="profile-card"
                   onClick={() => {
-                    localStorage.setItem(
+                    // ✅ sessionStorage
+                    sessionStorage.setItem(
                       "activeProfile",
                       JSON.stringify({
                         profile_id: p.profile_id,
@@ -105,6 +111,7 @@ export default function Profiles() {
                         name: p.name,
                       })
                     );
+
                     navigate("/home");
                   }}
                 >

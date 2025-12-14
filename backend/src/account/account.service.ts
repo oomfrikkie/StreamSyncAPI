@@ -42,12 +42,15 @@ export class AccountService {
     const hashed = await bcrypt.hash(dto.password, 10);
 
     const newAccount = this.accountRepo.create({
-      email: dto.email,
-      password_hash: hashed,
-      is_verified: false,
-      status: 'AWAITING_VERIFICATION',
-      failed_login_attempts: 0,
-    });
+  email: dto.email,
+  first_name: dto.first_name,
+  last_name: dto.last_name,
+  password_hash: hashed,
+  is_verified: false,
+  status: 'AWAITING_VERIFICATION',
+  failed_login_attempts: 0,
+});
+
 
     const savedAccount = await this.accountRepo.save(newAccount);
 

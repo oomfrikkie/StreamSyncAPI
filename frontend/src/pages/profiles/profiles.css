@@ -8,8 +8,7 @@
 
 /* Profiles grid */
 .profile-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+ display: flex;
   gap: 1.5rem;
   margin-top: 2rem;
   padding: 0 1rem;

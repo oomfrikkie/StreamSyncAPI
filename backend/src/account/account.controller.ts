@@ -40,4 +40,10 @@ export class AccountController {
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.accountService.resetPassword(dto);
   }
+
+  @Get(':id')
+getAccountById(@Param('id') id: string) {
+  return this.accountService.findById(Number(id));
+}
+
 }

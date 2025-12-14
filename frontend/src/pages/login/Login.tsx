@@ -1,66 +1,63 @@
-import { useState } from 'react'
-import { useNavigate, NavLink } from 'react-router-dom'
-import axios from 'axios'
-import './login.css'
+import { useState } from "react";
+import { useNavigate, NavLink } from "react-router-dom";
+import axios from "axios";
+import "./login.css";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [backendResponse, setBackendResponse] = useState(null);
+  const [backendResponse, setBackendResponse] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
   const navigate = useNavigate();
 
- const handleLogin = async () => {
-  setErrorMessage("");
-  setBackendResponse(null);
+  const handleLogin = async () => {
+    setErrorMessage("");
+    setBackendResponse(null);
 
-  try {
-    const res = await axios.post("http://localhost:3000/account/login", {
-      email,
-      password
-    });
+    try {
+      const res = await axios.post("http://localhost:3000/account/login", {
+        email,
+        password,
+      });
 
-    setBackendResponse(res.data);
+      setBackendResponse(res.data);
 
-    // SAVE ACCOUNT ID
-    localStorage.setItem("account_id", res.data.account_id);
+      // ✅ SAVE ACCOUNT ID (session-based)
+      sessionStorage.setItem("account_id", String(res.data.account_id));
 
-    // REDIRECT
-    window.location.href = "/profiles";
+      // ✅ React-router redirect (no hard reload)
+      navigate("/profiles");
 
-  } catch (error) {
-    const msg = error.response?.data?.message || "Login failed";
-    setErrorMessage(msg);
-  }
-};
-
+    } catch (error: any) {
+      const msg = error.response?.data?.message || "Login failed";
+      setErrorMessage(msg);
+    }
+  };
 
   return (
-    <section className='login-form'>
-
+    <section className="login-form">
       <label htmlFor="email">Email:</label>
-      <input 
-        type="text" 
-        id="email" 
+      <input
+        type="text"
+        id="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
 
       <label htmlFor="password">Password</label>
-      <input 
+      <input
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
 
       <button onClick={handleLogin}>Log in</button>
-      <NavLink to="/create" >need an account?</NavLink>
 
-      {errorMessage && (
-        <p className="error-box">{errorMessage}</p>
-      )}
+      <NavLink to="/create">need an account?</NavLink>
+
+      {errorMessage && <p className="error-box">{errorMessage}</p>}
 
       {backendResponse && (
         <div className="console-box">
@@ -68,7 +65,6 @@ export default function Login() {
           <pre>{JSON.stringify(backendResponse, null, 2)}</pre>
         </div>
       )}
-
     </section>
   );
 }

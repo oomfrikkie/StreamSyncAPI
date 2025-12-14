@@ -1,35 +1,56 @@
-import { BrowserRouter, Routes, Route, NavLink, useNavigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  NavLink,
+  useNavigate,
+} from "react-router-dom";
 import "./App.css";
+
 import Login from "./pages/login/Login";
 import CreateAccount from "./pages/createaccount/CreateAccount";
 import Profiles from "./pages/profiles/Profiles";
 import Home from "./pages/home/Home";
 import Series from "./series/Series";
+import Account from "./pages/account/Account";
 
 function App() {
   const navigate = useNavigate();
+
+  // ✅ session-based login check
+  const accountId = sessionStorage.getItem("account_id");
+
+  const handleGoProfiles = () => {
+    sessionStorage.removeItem("activeProfile");
+    navigate("/profiles");
+  };
+
   return (
     <>
       <header>
-        
-<NavLink
-  to="/profiles"
-  className="logo-link"
-  onClick={() => {
-    localStorage.removeItem("activeProfile");
-  }}
->
-  <h1 className="logo">StreamFlix</h1>
-</NavLink>
+        {/* LOGO */}
+        <h1
+          className="logo"
+          style={{ cursor: "pointer" }}
+          onClick={handleGoProfiles}
+        >
+          StreamFlix
+        </h1>
 
-
- 
+        {/* NAV */}
         <nav>
-          <NavLink to="/login">Login</NavLink>
-          <NavLink to="/profiles" onClick={() => { localStorage.removeItem("activeProfile");}}>
-  Home
-</NavLink>
-
+           <NavLink to="/profiles">Home</NavLink>
+          {!accountId ? (
+            // ❌ NOT LOGGED IN
+            <NavLink to="/login">Login</NavLink>
+          ) : (
+            // ✅ LOGGED IN
+            <NavLink
+              to="/account"
+              
+            >
+              Account
+            </NavLink>
+          )}
         </nav>
       </header>
 
@@ -40,10 +61,10 @@ function App() {
           <Route path="/profiles" element={<Profiles />} />
           <Route path="/home" element={<Home />} />
           <Route path="/series/:seriesId" element={<Series />} />
-
+          <Route path="/account" element={<Account />}/>
         </Routes>
       </main>
-   </>
+    </>
   );
 }
 
