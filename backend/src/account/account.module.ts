@@ -6,15 +6,16 @@ import { AccountService } from './account.service';
 import { AccountController } from './account.controller';
 
 import { AccountTokenModule } from './token/account-token.module';
+import { Profile } from 'src/profile/profile.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Account]), 
-    AccountTokenModule, // ✅ token system now available inside account service
+    TypeOrmModule.forFeature([Account, Profile]), 
+    AccountTokenModule,
   ],
 
   controllers: [AccountController],
   providers: [AccountService],
-  exports: [AccountService], // optional, but good practice
+  exports: [AccountService],
 })
 export class AccountModule {}

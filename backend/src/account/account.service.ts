@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { Account } from './account.entity';
+import { Profile } from 'src/profile/profile.entity';
 import { CreateAccountDto } from './dto-account/create-account.dto';
 import { LoginDto } from './dto-account/login.dto';
 
@@ -16,6 +17,9 @@ export class AccountService {
   constructor(
     @InjectRepository(Account)
     private readonly accountRepo: Repository<Account>,
+
+    @InjectRepository(Profile)
+    private readonly profileRepo: Repository<Profile>,
 
     private readonly tokenService: AccountTokenService,
   ) {}
@@ -150,5 +154,12 @@ export class AccountService {
     await this.accountRepo.save(tokenEntity.account);
 
     return { message: 'Password updated successfully' };
+  }
+
+  async getProfilesByAccount(accountId: number) {
+    return this.profileRepo.find({
+      where: { account: { account_id: accountId } },
+      relations: ['age_category'],
+    });
   }
 }

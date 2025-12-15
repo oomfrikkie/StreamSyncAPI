@@ -11,11 +11,6 @@ export class ProfileController {
     return this.profileService.create(dto);
   }
 
-  @Get('account/:id')
-  getProfilesByAccount(@Param('id') id: number) {
-    return this.profileService.getProfilesByAccount(id);
-  }
-
   @Get()
   getAllProfiles() {
     return this.profileService.getAllProfiles();

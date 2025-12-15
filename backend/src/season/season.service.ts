@@ -5,16 +5,38 @@ import { DataSource } from 'typeorm';
 export class SeasonService {
   constructor(private readonly dataSource: DataSource) {}
 
-  async getSeasonsBySeries(seriesId: number) {
+  async getAllSeasons() {
+  const query = `
+    SELECT
+      s.season_id,
+      s.series_id,
+      sr.name AS series_name,
+      s.season_number
+    FROM season s
+    JOIN series sr ON sr.series_id = s.series_id
+    ORDER BY s.series_id, s.season_number;
+  `;
+
+  return this.dataSource.query(query);
+}
+
+
+  async getEpisodes(seasonId: number) {
     const query = `
       SELECT
-        season_id,
-        season_number
-      FROM season
-      WHERE series_id = $1
-      ORDER BY season_number;
+        e.episode_id,
+        e.episode_number,
+        e.name,
+        e.duration_minutes,
+        c.content_id,
+        c.title,
+        c.description
+      FROM episode e
+      JOIN content c ON c.content_id = e.content_id
+      WHERE e.season_id = $1
+      ORDER BY e.episode_number;
     `;
 
-    return this.dataSource.query(query, [seriesId]);
+    return this.dataSource.query(query, [seasonId]);
   }
 }

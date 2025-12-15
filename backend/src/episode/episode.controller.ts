@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { EpisodeService } from './episode.service';
 
 @Controller('episodes')
@@ -8,10 +8,5 @@ export class EpisodeController {
   @Get()
   async getAll() {
     return this.episodeService.getAllEpisodes();
-  }
-
-  @Get('by-series/:seriesId')
-  async getBySeries(@Param('seriesId') seriesId: string) {
-    return this.episodeService.getEpisodesBySeries(Number(seriesId));
   }
 }

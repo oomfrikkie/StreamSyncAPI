@@ -41,7 +41,7 @@ export default function Profiles() {
 
     
     axios
-      .get(`http://localhost:3000/profile/account/${account_id}`)
+      .get(`http://localhost:3000/account/${account_id}/profiles`)
       .then((res) => {
         setProfiles(res.data);
         setLoading(false);

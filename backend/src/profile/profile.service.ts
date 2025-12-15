@@ -61,12 +61,6 @@ return {
 
   }
 
-  async getProfilesByAccount(accountId: number) {
-    return this.profileRepo.find({
-      where: { account: { account_id: accountId } },
-      relations: ['age_category'],
-    });
-  }
 
   async getAllProfiles() {
     return this.profileRepo.find({

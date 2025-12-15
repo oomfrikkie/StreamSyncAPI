@@ -5,13 +5,15 @@ import { LoginDto } from './dto-account/login.dto';
 import { ForgotPasswordDto } from './dto-account/forgot-password.dto';
 import { ResetPasswordDto } from './dto-account/reset-password.dto';
 import { AccountTokenService } from './token/account-token.service';
+import { ProfileService } from 'src/profile/profile.service';
 
 @Controller('account')
 export class AccountController {
   constructor(
-    private readonly accountService: AccountService,
-    private readonly tokenService: AccountTokenService,
-  ) {}
+  private readonly accountService: AccountService,
+  private readonly tokenService: AccountTokenService,
+) {}
+
 
   @Post('register')
   create(@Body() dto: CreateAccountDto) {
@@ -42,8 +44,14 @@ export class AccountController {
   }
 
   @Get(':id')
-getAccountById(@Param('id') id: string) {
-  return this.accountService.findById(Number(id));
+  getAccountById(@Param('id') id: string) {
+    return this.accountService.findById(Number(id));
+  }
+
+ 
+ @Get(':accountId/profiles')
+getProfilesByAccount(@Param('accountId') accountId: string) {
+  return this.accountService.getProfilesByAccount(Number(accountId));
 }
 
 }

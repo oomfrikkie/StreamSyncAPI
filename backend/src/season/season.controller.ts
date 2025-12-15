@@ -5,8 +5,15 @@ import { SeasonService } from './season.service';
 export class SeasonController {
   constructor(private readonly seasonService: SeasonService) {}
 
-  @Get('by-series/:seriesId')
-  async getBySeries(@Param('seriesId') seriesId: string) {
-    return this.seasonService.getSeasonsBySeries(Number(seriesId));
+  // GET /seasons
+  @Get()
+  getAllSeasons() {
+    return this.seasonService.getAllSeasons();
+  }
+
+  // GET /seasons/:seasonId/episodes
+  @Get(':seasonId/episodes')
+  getEpisodes(@Param('seasonId') seasonId: string) {
+    return this.seasonService.getEpisodes(Number(seasonId));
   }
 }
