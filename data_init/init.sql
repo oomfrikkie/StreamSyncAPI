@@ -365,3 +365,5 @@ SELECT setval('series_series_id_seq', (SELECT MAX(series_id) FROM series));
 SELECT setval('season_season_id_seq', (SELECT MAX(season_id) FROM season));
 SELECT setval('episode_episode_id_seq', (SELECT MAX(episode_id) FROM episode));
 SELECT setval('viewing_session_viewing_session_id_seq', (SELECT MAX(viewing_session_id) FROM viewing_session));
+
+

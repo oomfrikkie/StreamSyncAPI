@@ -74,30 +74,48 @@ export class AccountService {
   }
 
   async login(dto: LoginDto) {
-    // EMAIL FORMAT CHECK
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(dto.email)) {
-      throw new UnauthorizedException('Invalid email format');
-    }
-
-    const account = await this.accountRepo.findOne({
-      where: { email: dto.email },
-    });
-
-    if (!account) throw new UnauthorizedException('Invalid credentials');
-
-    if (account.status === 'AWAITING_VERIFICATION') {
-      throw new UnauthorizedException('Email has not been verified');
-    }
-
-    const match = await bcrypt.compare(dto.password, account.password_hash);
-    if (!match) throw new UnauthorizedException('Invalid credentials');
-
-    return {
-      message: 'Login successful',
-      account_id: account.account_id,
-    };
+  // EMAIL FORMAT CHECK
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(dto.email)) {
+    throw new UnauthorizedException('Invalid email format');
   }
+
+  const account = await this.accountRepo.findOne({
+    where: { email: dto.email },
+  });
+
+  if (!account) {
+    throw new UnauthorizedException('Invalid credentials');
+  }
+
+  // 🔒 BLOCKED ACCOUNT CHECK
+  if (account.status === 'BLOCKED') {
+    throw new UnauthorizedException('Account is blocked');
+  }
+
+  if (account.status === 'AWAITING_VERIFICATION') {
+    throw new UnauthorizedException('Email has not been verified');
+  }
+
+  const match = await bcrypt.compare(dto.password, account.password_hash);
+
+  
+  if (!match) {
+    account.failed_login_attempts += 1;
+    await this.accountRepo.save(account); // 🔥 DB trigger fires here
+    throw new UnauthorizedException('Invalid credentials');
+  }
+
+  
+  account.failed_login_attempts = 0;
+  await this.accountRepo.save(account);
+
+  return {
+    message: 'Login successful',
+    account_id: account.account_id,
+  };
+}
+
 
   async findById(id: number) {
     const account = await this.accountRepo.findOne({

@@ -35,36 +35,40 @@ export class ContentService {
   }
 
   async saveViewingProgress(dto: PauseContentDto) {
-    const query = `
-      INSERT INTO viewing_session
-        (
-          profile_id,
-          content_id,
-          last_position_seconds,
-          watched_seconds,
-          completed,
-          auto_continued_next,
-          start_timestamp
-        )
-      VALUES ($1, $2, $3, $4, $5, $6, NOW())
-      ON CONFLICT (profile_id, content_id)
-      DO UPDATE SET
-        last_position_seconds = EXCLUDED.last_position_seconds,
-        watched_seconds = EXCLUDED.watched_seconds,
-        completed = EXCLUDED.completed,
-        auto_continued_next = EXCLUDED.auto_continued_next,
-        start_timestamp = NOW();
-    `;
+  const completed =
+    dto.lastPositionSeconds / dto.durationSeconds >= 0.95;
 
-    await this.dataSource.query(query, [
-      dto.profileId,
-      dto.contentId,
-      dto.lastPositionSeconds,
-      dto.watchedSeconds,
-      dto.completed,
-      dto.autoContinuedNext,
-    ]);
-  }
+  const query = `
+    INSERT INTO viewing_session
+      (
+        profile_id,
+        content_id,
+        last_position_seconds,
+        watched_seconds,
+        completed,
+        auto_continued_next,
+        start_timestamp
+      )
+    VALUES ($1, $2, $3, $4, $5, $6, NOW())
+    ON CONFLICT (profile_id, content_id)
+    DO UPDATE SET
+      last_position_seconds = EXCLUDED.last_position_seconds,
+      watched_seconds = EXCLUDED.watched_seconds,
+      completed = EXCLUDED.completed,
+      auto_continued_next = EXCLUDED.auto_continued_next,
+      start_timestamp = NOW();
+  `;
+
+  await this.dataSource.query(query, [
+    dto.profileId,
+    dto.contentId,
+    dto.lastPositionSeconds,
+    dto.watchedSeconds,
+    completed,              // 👈 here
+    dto.autoContinuedNext,
+  ]);
+}
+
 
   async getViewingProgress(profileId: number, contentId: number) {
     const query = `

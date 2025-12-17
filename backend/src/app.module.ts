@@ -12,6 +12,7 @@ import { ContentModule } from './content/content.module';
 import { EpisodeModule } from './episode/episode.modules'; 
 import { SeriesModule } from './series/series.modules';
 import { SeasonModule } from './season/season.modules';
+import { WatchlistModule } from './watchlist/watchlist.module';
 
 
 @Module({
@@ -40,6 +41,7 @@ import { SeasonModule } from './season/season.modules';
     EpisodeModule, 
     SeriesModule,
     SeasonModule,
+    WatchlistModule
 
   ],
   controllers: [AppController],

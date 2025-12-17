@@ -28,8 +28,9 @@ export class PauseContentDto {
   watchedSeconds: number;
 
   @ApiProperty()
-  @IsBoolean()
-  completed: boolean;
+  @IsInt()
+  @Min(1)
+  durationSeconds: number; // 👈 NEW
 
   @ApiProperty()
   @IsBoolean()
