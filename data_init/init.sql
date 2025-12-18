@@ -76,6 +76,19 @@ CREATE TABLE IF NOT EXISTS account_subscription (
     FOREIGN KEY (quality_id) REFERENCES quality(quality_id)
 );
 
+CREATE TABLE IF NOT EXISTS discount (
+    discount_id SERIAL PRIMARY KEY,
+    account_id INT NOT NULL,
+    source VARCHAR(50) NOT NULL, -- 'INVITATION'
+    percentage INT NOT NULL,
+    valid_from DATE NOT NULL,
+    valid_until DATE NOT NULL,
+    active BOOLEAN DEFAULT TRUE,
+
+    CONSTRAINT uq_discount_once UNIQUE (account_id, source),
+    FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS invitation (
     invitation_id SERIAL PRIMARY KEY,
     inviter_account_id INT NOT NULL,
@@ -200,10 +213,10 @@ INSERT INTO profile (profile_id, account_id, age_category_id, name, image_url) V
 
 INSERT INTO account_subscription (account_subscription_id, account_id, quality_id, start_date, end_date, is_trial) VALUES
 (1, 1, 2, '2025-12-01', NULL, FALSE),
-(2, 2, 1, '2025-12-01', '2025-12-08', TRUE);
+(2, 2, 1, '2025-12-01', NULL, TRUE);
 
 INSERT INTO invitation (invitation_id, inviter_account_id, invitee_account_id, status, sent_timestamp, accepted_timestamp, discount_expiry_date) VALUES
-(1, 1, 2, 'ACCEPTED', '2025-12-01 10:00:00', '2025-12-02 12:00:00', '2026-01-01'),
+(1, 1, 2, 'ACCEPTED', '2025-12-01 10:00:00', '2025-12-02 12:00:00', NULL),
 (2, 2, 3, 'PENDING', '2025-12-02 14:00:00', NULL, NULL);
 
 INSERT INTO profile_genre_preference (profile_id, genre_id) VALUES
@@ -365,5 +378,3 @@ SELECT setval('series_series_id_seq', (SELECT MAX(series_id) FROM series));
 SELECT setval('season_season_id_seq', (SELECT MAX(season_id) FROM season));
 SELECT setval('episode_episode_id_seq', (SELECT MAX(episode_id) FROM episode));
 SELECT setval('viewing_session_viewing_session_id_seq', (SELECT MAX(viewing_session_id) FROM viewing_session));
-
-
