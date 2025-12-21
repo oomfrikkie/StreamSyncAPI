@@ -19,32 +19,28 @@ import { WatchlistModule } from './watchlist/watchlist.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '../.env',
     }),
 
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.POSTGRES_HOST,
+      host: process.env.DB_HOST,
       port: parseInt(process.env.POSTGRES_PORT!, 10),
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
       autoLoadEntities: true,
       synchronize: false,
-      logging: ['query', 'error']
+      logging: ['query', 'error'],
     }),
 
     AccountModule,
     AccountTokenModule,
     ProfileModule,
     ContentModule,
-    EpisodeModule, 
+    EpisodeModule,
     SeriesModule,
     SeasonModule,
-    WatchlistModule
-
+    WatchlistModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
