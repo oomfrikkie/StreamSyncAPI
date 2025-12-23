@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS profile (
     age_category_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
     image_url VARCHAR(500),
+    min_quality VARCHAR(10) DEFAULT 'SD',
     FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE CASCADE,
     FOREIGN KEY (age_category_id) REFERENCES age_category(age_category_id)
 );
