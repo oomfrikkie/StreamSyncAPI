@@ -47,8 +47,12 @@ export class ContentController {
   }
 
   @Get('currently-watching/:profileId')
-async currentlyWatching(@Param('profileId') profileId: string) {
+  async currentlyWatching(@Param('profileId') profileId: string) {
   return this.contentService.getCurrentlyWatching(Number(profileId));
-}
+  }
 
+  @Get('personalised')
+  getPersonalised(@Query('profileId') profileId: string) {
+  return this.contentService.getPersonalisedContent(Number(profileId));
+  }
 }
