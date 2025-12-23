@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { Quality } from './quality/quality.entity';
 
 @Entity('content')
 export class Content {
@@ -17,6 +24,10 @@ export class Content {
   @Column({ name: 'content_type' })
   contentType: string;
 
-  @Column({ name: 'quality_id' })
-  qualityId: number;
+  @ManyToOne(() => Quality, quality => quality.contents)
+  @JoinColumn({ name: 'quality_id' })
+  quality: Quality;
+
+  @Column({ name: 'duration_minutes', nullable: true })
+  durationMinutes: number;
 }
