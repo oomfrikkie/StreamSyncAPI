@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsInt,
+  Min,
+  IsString,
+  IsOptional,
+  IsArray,
+  IsEnum,
+} from 'class-validator';
 
 export class CreateProfileDto {
   @ApiProperty()
@@ -14,11 +21,19 @@ export class CreateProfileDto {
 
   @ApiProperty()
   @IsString()
-  @IsNotEmpty()
   name: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
   image_url?: string;
+
+  @ApiProperty({ type: [Number], required: false })
+  @IsOptional()
+  @IsArray()
+  preferredGenres?: number[];
+
+  @ApiProperty({ enum: ['SD', 'HD', 'UHD'], required: false })
+  @IsOptional()
+  @IsEnum(['SD', 'HD', 'UHD'])
+  minQuality?: 'SD' | 'HD' | 'UHD';
 }
