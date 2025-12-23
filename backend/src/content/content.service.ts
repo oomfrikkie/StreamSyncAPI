@@ -134,4 +134,20 @@ export class ContentService {
       [ageCategoryId]
     );
   }
+
+  async getPersonalisedContent(profileId: number) {
+  const query = `
+    SELECT c.*
+    FROM content c
+    JOIN profile p ON p.profile_id = $1
+    JOIN quality q ON q.quality_id = c.quality_id
+    WHERE c.age_category_id <= p.age_category_id
+      AND q.quality_id <= (
+        SELECT quality_id FROM quality WHERE name = p.min_quality
+      )
+    ORDER BY c.title;
+  `;
+
+  return this.dataSource.query(query, [profileId]);
+}
 }
