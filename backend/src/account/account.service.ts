@@ -174,10 +174,11 @@ export class AccountService {
     return { message: 'Password updated successfully' };
   }
 
-  async getProfilesByAccount(accountId: number) {
-    return this.profileRepo.find({
-      where: { account: { account_id: accountId } },
-      relations: ['age_category'],
-    });
-  }
+async getProfilesByAccount(accountId: number) {
+  return this.profileRepo.find({
+    where: { account_id: accountId },
+    relations: ['age_category'],
+  });
+}
+
 }

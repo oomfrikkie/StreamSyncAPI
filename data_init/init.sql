@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS profile (
     age_category_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
     image_url VARCHAR(500),
-    min_quality VARCHAR(10) DEFAULT 'SD',
+    min_quality_id INT NOT NULL DEFAULT 1,
+    FOREIGN KEY (min_quality_id) REFERENCES quality(quality_id),
     FOREIGN KEY (account_id) REFERENCES account(account_id) ON DELETE CASCADE,
     FOREIGN KEY (age_category_id) REFERENCES age_category(age_category_id)
 );
@@ -175,6 +176,14 @@ CREATE TABLE IF NOT EXISTS viewing_session (
     FOREIGN KEY (content_id) REFERENCES content(content_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS content_genre (
+    content_id INT NOT NULL,
+    genre_id INT NOT NULL,
+    PRIMARY KEY (content_id, genre_id),
+    FOREIGN KEY (content_id) REFERENCES content(content_id) ON DELETE CASCADE,
+    FOREIGN KEY (genre_id) REFERENCES genre(genre_id) ON DELETE CASCADE
+);
+
 -- =========================
 -- SEED DATA
 -- =========================
@@ -205,7 +214,13 @@ INSERT INTO age_category (age_category_id, name, guidelines_text) VALUES
 INSERT INTO genre (genre_id, name) VALUES
 (1, 'Comedy'),
 (2, 'Action'),
-(3, 'Drama');
+(3, 'Drama'),
+(4, 'Horror'),
+(5, 'Sci-Fi'),
+(6, 'Adventure'),
+(7, 'Animation'),
+(8, 'Thriller'),
+(9, 'Mystery');
 
 INSERT INTO profile (profile_id, account_id, age_category_id, name, image_url) VALUES
 (1, 1, 2, 'Alice Teen', NULL),
@@ -233,6 +248,19 @@ INSERT INTO series (series_id, name) VALUES
 (1, 'Space Adventures'),
 (2, 'Mystery Island'),
 (3, 'Stranger Things');
+
+CREATE TABLE series_genre (
+    series_id INT NOT NULL,
+    genre_id INT NOT NULL,
+    FOREIGN KEY (series_id) REFERENCES series(series_id),
+    FOREIGN KEY (genre_id) REFERENCES genre(genre_id),
+    PRIMARY KEY (series_id, genre_id)
+);
+
+INSERT INTO series_genre (series_id, genre_id) VALUES
+(1, 5), (1, 6), -- Space Adventures: Sci-Fi, Adventure
+(2, 6), (2, 9), -- Mystery Island: Adventure, Mystery
+(3, 5), (3, 3), (3, 4); -- Stranger Things: Sci-Fi, Drama, Horror
 
 INSERT INTO season (season_id, series_id, season_number) VALUES
 (1, 1, 1),
@@ -359,6 +387,55 @@ INSERT INTO viewing_session (profile_id, content_id, last_position_seconds, watc
 (1, 1, 1200, 1200, FALSE),
 (1, 3, 5400, 5400, TRUE),
 (3, 4, 800, 800, FALSE);
+
+-- Content Genres
+INSERT INTO content_genre (content_id, genre_id) VALUES
+-- Space Adventures episodes: Sci-Fi, Adventure
+(1, 5), (1, 6),
+(2, 5), (2, 6),
+
+-- The Funny Movie: Comedy
+(3, 1),
+
+-- Kids Adventure: Animation, Adventure
+(4, 7), (4, 6),
+
+-- Stranger Things Season 1: Sci-Fi, Drama, Horror
+(5, 5), (5, 3), (5, 4),
+(6, 5), (6, 3), (6, 4),
+(7, 5), (7, 3), (7, 4),
+(8, 5), (8, 3), (8, 4),
+(9, 5), (9, 3), (9, 4),
+(10, 5), (10, 3), (10, 4),
+(11, 5), (11, 3), (11, 4),
+(12, 5), (12, 3), (12, 4),
+
+-- Stranger Things Season 2: Sci-Fi, Drama, Horror
+(13, 5), (13, 3), (13, 4),
+(14, 5), (14, 3), (14, 4),
+(15, 5), (15, 3), (15, 4),
+(16, 5), (16, 3), (16, 4),
+(17, 5), (17, 3), (17, 4),
+(18, 5), (18, 3), (18, 4),
+(19, 5), (19, 3), (19, 4),
+(20, 5), (20, 3), (20, 4),
+(21, 5), (21, 3), (21, 4),
+
+-- Stranger Things Season 3: Sci-Fi, Drama, Horror
+(22, 5), (22, 3), (22, 4),
+(23, 5), (23, 3), (23, 4),
+(24, 5), (24, 3), (24, 4),
+(25, 5), (25, 3), (25, 4),
+(26, 5), (26, 3), (26, 4),
+(27, 5), (27, 3), (27, 4),
+(28, 5), (28, 3), (28, 4),
+(29, 5), (29, 3), (29, 4),
+
+-- Saw movies: Horror, Thriller
+(30, 4), (30, 8),
+(31, 4), (31, 8),
+(32, 4), (32, 8),
+(33, 4), (33, 8);
 
 -- =========================
 -- SEQUENCE FIXES

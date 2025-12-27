@@ -13,6 +13,7 @@ import { EpisodeModule } from './episode/episode.modules';
 import { SeriesModule } from './series/series.modules';
 import { SeasonModule } from './season/season.modules';
 import { WatchlistModule } from './watchlist/watchlist.module';
+import { InvitationModule } from './invitation/invitation.module';
 
 
 @Module({
@@ -42,6 +43,7 @@ import { WatchlistModule } from './watchlist/watchlist.module';
     SeriesModule,
     SeasonModule,
     WatchlistModule,
+    InvitationModule,
   ],
 })
 export class AppModule {}

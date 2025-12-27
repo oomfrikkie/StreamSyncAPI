@@ -136,18 +136,22 @@ export class ContentService {
   }
 
   async getPersonalisedContent(profileId: number) {
-  const query = `
-    SELECT c.*
-    FROM content c
-    JOIN profile p ON p.profile_id = $1
-    JOIN quality q ON q.quality_id = c.quality_id
-    WHERE c.age_category_id <= p.age_category_id
-      AND q.quality_id <= (
-        SELECT quality_id FROM quality WHERE name = p.min_quality
-      )
-    ORDER BY c.title;
-  `;
+    const query = `
+      SELECT DISTINCT c.content_id, c.title, c.description, 'MOVIE' as type, q.name as quality_name
+      FROM content c
+      JOIN profile p ON p.profile_id = $1
+      JOIN quality q ON q.quality_id = c.quality_id
+      WHERE c.content_type = 'MOVIE' AND c.age_category_id <= p.age_category_id
+      AND (NOT EXISTS (SELECT 1 FROM profile_genre_preference pgp WHERE pgp.profile_id = $1)
+           OR c.content_id IN (SELECT cg.content_id FROM content_genre cg JOIN profile_genre_preference pgp ON pgp.genre_id = cg.genre_id WHERE pgp.profile_id = $1))
+      UNION
+      SELECT DISTINCT s.series_id as content_id, s.name as title, null as description, 'SERIES' as type, null as quality_name
+      FROM series s
+      WHERE NOT EXISTS (SELECT 1 FROM profile_genre_preference pgp WHERE pgp.profile_id = $1)
+      OR s.series_id IN (SELECT sg.series_id FROM series_genre sg JOIN profile_genre_preference pgp ON pgp.genre_id = sg.genre_id WHERE pgp.profile_id = $1)
+      ORDER BY title;
+    `;
+    return this.dataSource.query(query, [profileId]);
+  }
 
-  return this.dataSource.query(query, [profileId]);
-}
 }

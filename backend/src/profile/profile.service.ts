@@ -27,8 +27,9 @@ export class ProfileService {
       age_category_id: dto.age_category_id,
       name: dto.name,
       image_url: dto.image_url ?? null,
+      min_quality_id: dto.minQualityId,
       preferredGenres: genres,
-      minQuality: dto.minQuality ?? 'SD',
+    
     });
 
     return this.profileRepo.save(profile);
@@ -36,5 +37,9 @@ export class ProfileService {
 
   async getAllProfiles() {
     return this.profileRepo.find();
+  }
+
+  async delete(id: number) {
+    return this.profileRepo.delete(id);
   }
 }

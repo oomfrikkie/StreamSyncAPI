@@ -4,13 +4,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Profile } from './profile.entity';
 import { Account } from '../account/account.entity';
 import { AgeCategory } from '../age-category/age-category.entity';
+import { Genre } from '../content/genre/genre.entity';
 
 import { ProfileController } from './profile.controller';
 import { ProfileService } from './profile.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Profile, Account, AgeCategory]),
+    TypeOrmModule.forFeature([Profile, Account, AgeCategory, Genre]),
   ],
   controllers: [ProfileController],
   providers: [ProfileService],

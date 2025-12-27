@@ -4,8 +4,12 @@ import {
   Column,
   ManyToMany,
   JoinTable,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Genre } from '../content/genre/genre.entity';
+import { AgeCategory } from '../age-category/age-category.entity';
+import { Quality } from 'src/content/quality/quality.entity';
 
 @Entity('profile')
 export class Profile {
@@ -18,11 +22,23 @@ export class Profile {
   @Column({ name: 'age_category_id' })
   age_category_id: number;
 
+  @ManyToOne(() => AgeCategory)
+  @JoinColumn({ name: 'age_category_id' })
+  age_category: AgeCategory;
+
   @Column({ name: 'name' })
   name: string;
 
-  @Column({ name: 'image_url', nullable: true })
+  @Column({ name: 'image_url', type: 'text', nullable: true })
   image_url: string | null;
+
+  @Column({ name: 'min_quality_id' })
+  min_quality_id: number;
+
+  // 🔥 THIS IS THE FIX
+  @ManyToOne(() => Quality)
+  @JoinColumn({ name: 'min_quality_id' })
+  min_quality: Quality;
 
   @ManyToMany(() => Genre, { eager: true })
   @JoinTable({
@@ -31,7 +47,5 @@ export class Profile {
     inverseJoinColumn: { name: 'genre_id' },
   })
   preferredGenres: Genre[];
-
-  @Column({ name: 'min_quality', default: 'SD' })
-  minQuality: 'SD' | 'HD' | 'UHD';
 }
+

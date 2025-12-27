@@ -1,4 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+} from 'typeorm';
 import { Content } from '../content.entity';
 
 @Entity('quality')
@@ -7,10 +12,7 @@ export class Quality {
   qualityId: number;
 
   @Column({ name: 'name' })
-  name: 'SD' | 'HD' | 'UHD';
-
-  @Column({ name: 'monthly_value', type: 'double precision' })
-  monthlyValue: number;
+  name: string;
 
   @OneToMany(() => Content, content => content.quality)
   contents: Content[];

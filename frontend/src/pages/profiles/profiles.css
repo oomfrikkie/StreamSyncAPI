@@ -54,6 +54,26 @@ select {
   border: none;
 }
 
+.genres-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.genres-checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.genres-checkboxes input[type="checkbox"] {
+  margin: 0;
+}
+
 button {
   background: #e50914;
   color: white;

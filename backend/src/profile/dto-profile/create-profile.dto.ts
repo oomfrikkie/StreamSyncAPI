@@ -5,7 +5,6 @@ import {
   IsString,
   IsOptional,
   IsArray,
-  IsEnum,
 } from 'class-validator';
 
 export class CreateProfileDto {
@@ -25,6 +24,7 @@ export class CreateProfileDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsString()
   image_url?: string;
 
   @ApiProperty({ type: [Number], required: false })
@@ -32,8 +32,7 @@ export class CreateProfileDto {
   @IsArray()
   preferredGenres?: number[];
 
-  @ApiProperty({ enum: ['SD', 'HD', 'UHD'], required: false })
-  @IsOptional()
-  @IsEnum(['SD', 'HD', 'UHD'])
-  minQuality?: 'SD' | 'HD' | 'UHD';
+  @ApiProperty({ description: 'FK to quality table' })
+  @IsInt()
+  minQualityId: number;
 }

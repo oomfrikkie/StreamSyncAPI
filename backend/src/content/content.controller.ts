@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Get, Query, Param } from '@nestjs/common';
+import { ApiQuery } from '@nestjs/swagger';
 import { ContentService } from './content.service';
 import { PlayContentDto } from './dto-content/play.dto';
 import { PauseContentDto } from './dto-content/pause.dto';
@@ -39,8 +40,9 @@ export class ContentController {
     return this.contentService.getContentById(Number(id));
   }
 
-  @Get('by-age/:ageCategoryId')
-  getByAge(@Param('ageCategoryId') ageCategoryId: string) {
+  @ApiQuery({ name: 'ageCategoryId', required: true, type: Number })
+  @Get('by-age')
+  getByAge(@Query('ageCategoryId') ageCategoryId: string) {
     return this.contentService.getContentBasedOnAgeRating(
       Number(ageCategoryId)
     );

@@ -13,10 +13,29 @@ interface Profile {
   };
 }
 
+const genres = [
+  { id: 1, name: 'Comedy' },
+  { id: 2, name: 'Action' },
+  { id: 3, name: 'Drama' },
+  { id: 4, name: 'Horror' },
+  { id: 5, name: 'Sci-Fi' },
+  { id: 6, name: 'Adventure' },
+  { id: 7, name: 'Animation' },
+  { id: 8, name: 'Thriller' },
+];
+
+const qualities = [
+  { id: 1, name: 'SD' },
+  { id: 2, name: 'HD' },
+  { id: 3, name: '4K' },
+];
+
 export default function Profiles() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [name, setName] = useState("");
   const [ageCategory, setAgeCategory] = useState(1);
+  const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
+  const [minQuality, setMinQuality] = useState(1);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -28,18 +47,8 @@ export default function Profiles() {
   const storedId = sessionStorage.getItem("account_id");
   const account_id = storedId ? Number(storedId) : null;
 
-  useEffect(() => {
-    if (!account_id) {
-      setError("You are not logged in.");
-      setLoading(false);
-       setTimeout(() => {
-        navigate("/login");
-      }, 3000);
-      return;
-    }
-   
-
-    
+  const fetchProfiles = () => {
+    if (!account_id) return;
     axios
       .get(`http://localhost:3000/account/${account_id}/profiles`)
       .then((res) => {
@@ -50,6 +59,19 @@ export default function Profiles() {
         setError(err.response?.data?.message || "Failed to load profiles");
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    if (!account_id) {
+      setError("You are not logged in.");
+      setLoading(false);
+       setTimeout(() => {
+        navigate("/login");
+      }, 3000);
+      return;
+    }
+   
+    fetchProfiles();
   }, [account_id]);
 
   const handleCreate = async () => {
@@ -72,13 +94,18 @@ export default function Profiles() {
         name,
         age_category_id: ageCategory,
         image_url: null,
+        preferredGenres: selectedGenres,
+        minQualityId: minQuality,
       });
 
-      setProfiles([...profiles, res.data]);
       setConsoleOutput(res.data);
+
+      fetchProfiles();
 
       setName("");
       setAgeCategory(1);
+      setSelectedGenres([]);
+      setMinQuality(1);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to create profile");
       setConsoleOutput(err.response?.data || err);
@@ -140,6 +167,38 @@ export default function Profiles() {
               <option value={1}>Child</option>
               <option value={2}>Teen</option>
               <option value={3}>Adult</option>
+            </select>
+
+            <label>Preferred Genres:</label>
+            <div className="genres-checkboxes">
+              {genres.map((genre) => (
+                <label key={genre.id}>
+                  <input
+                    type="checkbox"
+                    checked={selectedGenres.includes(genre.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedGenres([...selectedGenres, genre.id]);
+                      } else {
+                        setSelectedGenres(selectedGenres.filter((id) => id !== genre.id));
+                      }
+                    }}
+                  />
+                  {genre.name}
+                </label>
+              ))}
+            </div>
+
+            <label>Minimum Quality:</label>
+            <select
+              value={minQuality}
+              onChange={(e) => setMinQuality(Number(e.target.value))}
+            >
+              {qualities.map((q) => (
+                <option key={q.id} value={q.id}>
+                  {q.name}
+                </option>
+              ))}
             </select>
 
             <button onClick={handleCreate}>Create Profile</button>

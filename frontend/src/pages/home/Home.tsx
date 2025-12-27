@@ -9,13 +9,6 @@ interface Profile {
   name: string;
 }
 
-interface ContentItem {
-  content_id: number;
-  title: string;
-  description: string;
-  content_type: "MOVIE" | "EPISODE";
-}
-
 interface CurrentlyWatchingItem {
   content_id: number;
   title: string;
@@ -23,16 +16,10 @@ interface CurrentlyWatchingItem {
   watched_seconds: number;
 }
 
-interface SeriesItem {
-  series_id: number;
-  name: string;
-}
-
 export default function Home() {
   const navigate = useNavigate();
 
   const [movies, setMovies] = useState<ContentItem[]>([]);
-  const [series, setSeries] = useState<SeriesItem[]>([]);
   const [currentlyWatching, setCurrentlyWatching] = useState<CurrentlyWatchingItem[]>([]);
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
 
@@ -76,8 +63,7 @@ export default function Home() {
   };
 
   const handlePause = async (contentId: number) => {
-    if (!activeProfile) return;
-
+    setPlayingContentId(null);
     stopTimer();
 
     await axios.post("http://localhost:3000/content/pause", {
@@ -89,22 +75,6 @@ export default function Home() {
       completed: false,
       autoContinuedNext: false,
     });
-
-    setPlayingContentId(null);
-  };
-
-  const handleResume = async (item: CurrentlyWatchingItem) => {
-    if (!activeProfile) return;
-
-    await axios.get("http://localhost:3000/content/resume", {
-      params: {
-        profileId: activeProfile.profile_id,
-        contentId: item.content_id,
-      },
-    });
-
-    setPlayingContentId(item.content_id);
-    startTimer(item.last_position_seconds);
   };
 
   // ---------------- INIT ----------------
@@ -138,19 +108,13 @@ export default function Home() {
       .then(res => setCurrentlyWatching(res.data))
       .catch(() => setCurrentlyWatching([]));
 
-    // Movies
+    // Content
     axios
-      .get(`http://localhost:3000/content/by-age/${profile.age_category_id}`)
+      .get(`http://localhost:3000/content/personalised?profileId=${profile.profile_id}`)
       .then(res => {
         const allContent: ContentItem[] = res.data;
-        setMovies(allContent.filter(c => c.content_type === "MOVIE"));
+        setMovies(allContent);
       });
-
-    // Series
-    axios
-      .get("http://localhost:3000/series")
-      .then(res => setSeries(res.data))
-      .catch(() => setSeries([]));
   }, [navigate]);
 
   // ---------------- GUARDS ----------------
@@ -197,42 +161,31 @@ export default function Home() {
         </>
       )}
 
-      {/* SERIES */}
-      {series.length > 0 && (
-        <>
-          <h2 className="section-title">Series</h2>
-          <div className="content-grid">
-            {series.map(s => (
-              <div
-                key={s.series_id}
-                className="content-card clickable"
-                onClick={() => navigate(`/series/${s.series_id}`)}
-              >
-                <h3>{s.name}</h3>
-                <button>View Series</button>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* MOVIES */}
-      <h2 className="section-title">Movies</h2>
+      {/* CONTENT */}
+      <h2 className="section-title">Recommended Content</h2>
       <div className="content-grid">
         {movies.map(movie => (
           <div key={movie.content_id} className="content-card">
             <h3>{movie.title}</h3>
-            <p>{movie.description}</p>
+            <p className="type">{movie.type}</p>
+            {movie.description && <p>{movie.description}</p>}
+            {movie.quality_name && <p>Quality: {movie.quality_name}</p>}
 
-            <button
-              onClick={() =>
-                playingContentId === movie.content_id
-                  ? handlePause(movie.content_id)
-                  : handlePlay(movie.content_id)
-              }
-            >
-              {playingContentId === movie.content_id ? "Pause" : "Play"}
-            </button>
+            {movie.type === 'SERIES' ? (
+              <button onClick={() => navigate(`/series/${movie.content_id}`)}>
+                View Series
+              </button>
+            ) : (
+              <button
+                onClick={() =>
+                  playingContentId === movie.content_id
+                    ? handlePause(movie.content_id)
+                    : handlePlay(movie.content_id)
+                }
+              >
+                {playingContentId === movie.content_id ? "Pause" : "Play"}
+              </button>
+            )}
           </div>
         ))}
       </div>

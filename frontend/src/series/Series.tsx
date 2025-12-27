@@ -55,6 +55,7 @@ export default function Series() {
 
   const handlePause = async (contentId: number) => {
     if (!activeProfile) return;
+    setPlayingContentId(null);
     stopTimer();
     await axios.post("http://localhost:3000/content/pause", {
       profileId: activeProfile.profile_id,
@@ -64,7 +65,6 @@ export default function Series() {
       completed: false,
       autoContinuedNext: false,
     });
-    setPlayingContentId(null);
   };
 
   const handleResume = async (ep: EpisodeItem) => {
