@@ -26,10 +26,9 @@ export class SeasonService {
       SELECT
         e.episode_id,
         e.episode_number,
-        e.name,
-        e.duration_minutes,
-        c.content_id,
         c.title,
+        c.duration_minutes,
+        c.content_id,
         c.description
       FROM episode e
       JOIN content c ON c.content_id = e.content_id

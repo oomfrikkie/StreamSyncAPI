@@ -12,8 +12,8 @@ export class EpisodeService {
         e.episode_id,
         c.content_id,
         c.title,
+        c.duration_minutes,
         e.episode_number,
-        e.duration_minutes,
         s.season_number,
         se.name AS series_name
       FROM episode e
