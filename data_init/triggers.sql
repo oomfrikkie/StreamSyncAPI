@@ -1,4 +1,43 @@
 -- =========================
+-- INVITATION ACCEPTED DISCOUNT TRIGGER
+-- =========================
+
+CREATE OR REPLACE FUNCTION apply_discount_on_invitation_accept()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.status = 'ACCEPTED' AND (OLD.status IS DISTINCT FROM 'ACCEPTED') THEN
+    -- Discount for invitee
+    INSERT INTO discount (account_id, source, percentage, valid_from, valid_until)
+    VALUES (
+      NEW.invitee_account_id,
+      'INVITATION',
+      20,
+      CURRENT_DATE,
+      CURRENT_DATE + INTERVAL '1 month'
+    )
+    ON CONFLICT DO NOTHING;
+
+    -- Discount for inviter
+    INSERT INTO discount (account_id, source, percentage, valid_from, valid_until)
+    VALUES (
+      NEW.inviter_account_id,
+      'INVITATION',
+      20,
+      CURRENT_DATE,
+      CURRENT_DATE + INTERVAL '1 month'
+    )
+    ON CONFLICT DO NOTHING;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_apply_discount_on_invitation_accept
+AFTER UPDATE OF status
+ON invitation
+FOR EACH ROW
+EXECUTE FUNCTION apply_discount_on_invitation_accept();
+-- =========================
 -- WATCHLIST CLEANUP TRIGGER
 -- =========================
 

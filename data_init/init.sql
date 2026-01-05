@@ -184,9 +184,9 @@ CREATE TABLE IF NOT EXISTS content_genre (
     FOREIGN KEY (genre_id) REFERENCES genre(genre_id) ON DELETE CASCADE
 );
 
--- =========================
--- SEED DATA
--- =========================
+
+-- Ensure profile table is empty and sequence reset so profile_id 1 exists
+TRUNCATE TABLE profile RESTART IDENTITY CASCADE;
 
 INSERT INTO projectmembers (id, name) VALUES
 (1, 'Felix'),
@@ -223,9 +223,9 @@ INSERT INTO genre (genre_id, name) VALUES
 (9, 'Mystery');
 
 INSERT INTO profile (profile_id, account_id, age_category_id, name, image_url) VALUES
-(1, 1, 2, 'Alice Teen', NULL),
-(2, 1, 3, 'Alice Adult', NULL),
-(3, 2, 1, 'Bob Child', NULL);
+    (1, 1, 2, 'Alice Teen', NULL),
+    (2, 1, 3, 'Alice Adult', NULL),
+    (3, 2, 1, 'Bob Child', NULL);
 
 INSERT INTO account_subscription (account_subscription_id, account_id, quality_id, start_date, end_date, is_trial) VALUES
 (1, 1, 2, '2025-12-01', NULL, FALSE),
