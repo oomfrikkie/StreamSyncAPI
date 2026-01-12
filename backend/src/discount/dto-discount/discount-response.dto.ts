@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsDateString } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsDateString,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
 
 export class DiscountResponseDto {
   @ApiProperty({ example: 20 })
@@ -13,4 +19,9 @@ export class DiscountResponseDto {
   @ApiProperty({ example: true })
   @IsBoolean()
   active: boolean;
+
+  @ApiProperty({ example: 80, required: false })
+  @IsOptional()
+  @IsNumber()
+  price?: number;
 }
