@@ -1,19 +1,19 @@
 import { Controller, Post, Body, Get, Param } from '@nestjs/common';
 import { ViewingSessionService } from './viewing-session.service';
-import { PlayContentDto } from '../content/dto-content/play.dto';
-import { PauseContentDto } from '../content/dto-content/pause.dto';
+import { PlayViewingSessionDto } from './dto-viewing-session/play.dto';
+import { PauseViewingSessionDto } from './dto-viewing-session/pause.dto';
 
 @Controller('viewing-session')
 export class ViewingSessionController {
   constructor(private readonly viewingSessionService: ViewingSessionService) {}
 
   @Post('play')
-  play(@Body() dto: PlayContentDto) {
+  play(@Body() dto: PlayViewingSessionDto) {
     return this.viewingSessionService.startViewingSession(dto);
   }
 
   @Post('pause')
-  pause(@Body() dto: PauseContentDto) {
+  pause(@Body() dto: PauseViewingSessionDto) {
     return this.viewingSessionService.saveViewingProgress(dto);
   }
 

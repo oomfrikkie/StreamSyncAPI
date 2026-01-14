@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { PlayContentDto } from '../content/dto-content/play.dto';
-import { PauseContentDto } from '../content/dto-content/pause.dto';
+import { PlayViewingSessionDto } from './dto-viewing-session/play.dto';
+import { PauseViewingSessionDto } from './dto-viewing-session/pause.dto';
 
 @Injectable()
 export class ViewingSessionService {
   constructor(private readonly dataSource: DataSource) {}
 
-    async startViewingSession(dto: PlayContentDto) {
+    async startViewingSession(dto: PlayViewingSessionDto) {
     const query = `
       INSERT INTO viewing_session
         (
@@ -33,7 +33,7 @@ export class ViewingSessionService {
     return result[0];
   }
 
-  async saveViewingProgress(dto: PauseContentDto) {
+  async saveViewingProgress(dto: PauseViewingSessionDto) {
     const completed =
       dto.lastPositionSeconds / dto.durationSeconds >= 0.95;
     const query = `
