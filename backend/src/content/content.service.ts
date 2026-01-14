@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { PlayContentDto } from './dto-content/play.dto';
-import { PauseContentDto } from './dto-content/pause.dto';
+import { PlayViewingSessionDto } from '../viewing-session/dto-viewing-session/play.dto';
+import { PauseViewingSessionDto } from '../viewing-session/dto-viewing-session/pause.dto';
 import { ViewingSessionService } from '../viewing-session/viewing-session.service';
 
 @Injectable()
@@ -11,11 +11,11 @@ export class ContentService {
     private readonly viewingSessionService: ViewingSessionService,
   ) {}
 
-  async play(dto: PlayContentDto) {
+  async play(dto: PlayViewingSessionDto) {
     return this.viewingSessionService.startViewingSession(dto);
   }
 
-  async pause(dto: PauseContentDto) {
+  async pause(dto: PauseViewingSessionDto) {
     return this.viewingSessionService.saveViewingProgress(dto);
   }
 

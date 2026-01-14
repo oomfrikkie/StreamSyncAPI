@@ -1,21 +1,21 @@
 import { Controller, Post, Body, Get, Query, Param } from '@nestjs/common';
 import { ApiQuery } from '@nestjs/swagger';
 import { ContentService } from './content.service';
-import { PlayContentDto } from './dto-content/play.dto';
-import { PauseContentDto } from './dto-content/pause.dto';
+import { PlayViewingSessionDto } from '../viewing-session/dto-viewing-session/play.dto';
+import { PauseViewingSessionDto } from '../viewing-session/dto-viewing-session/pause.dto';
 
 @Controller('content')
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}
 
   @Post('play')
-  async play(@Body() dto: PlayContentDto) {
+  async play(@Body() dto: PlayViewingSessionDto) {
     return this.contentService.play(dto);
 
   }
 
   @Post('pause')
-  async pause(@Body() dto: PauseContentDto) {
+  async pause(@Body() dto: PauseViewingSessionDto) {
     return this.contentService.pause(dto);
   }
 
