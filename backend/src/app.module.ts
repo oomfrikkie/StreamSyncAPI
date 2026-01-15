@@ -9,6 +9,7 @@ import { AccountModule } from './account/account.module';
 import { AccountTokenModule } from './account/token/account-token.module';
 import { ProfileModule } from './profile/profile.module';
 import { ContentModule } from './content/content.module';
+import { ViewingSessionModule } from './viewing-session/viewing-session.module';
 import { EpisodeModule } from './episode/episode.modules'; 
 import { SeriesModule } from './series/series.modules';
 import { SeasonModule } from './season/season.modules';
@@ -44,6 +45,7 @@ import { InvitationModule } from './invitation/invitation.module';
     SeasonModule,
     WatchlistModule,
     InvitationModule,
+    ViewingSessionModule,
   ],
 })
 export class AppModule {}

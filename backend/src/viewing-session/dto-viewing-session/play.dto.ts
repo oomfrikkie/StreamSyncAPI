@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, Min } from 'class-validator';
 
-export class PlayContentDto {
+export class PlayViewingSessionDto {
   @ApiProperty()
   @IsInt()
   @Min(1)

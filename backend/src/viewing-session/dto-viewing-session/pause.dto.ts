@@ -1,12 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsInt,
-  IsBoolean,
-  IsNotEmpty,
-  Min,
-} from 'class-validator';
+import { IsInt, IsBoolean, Min } from 'class-validator';
 
-export class PauseContentDto {
+export class PauseViewingSessionDto {
   @ApiProperty()
   @IsInt()
   @Min(1)
@@ -30,7 +25,7 @@ export class PauseContentDto {
   @ApiProperty()
   @IsInt()
   @Min(1)
-  durationSeconds: number; // 👈 NEW
+  durationSeconds: number;
 
   @ApiProperty()
   @IsBoolean()

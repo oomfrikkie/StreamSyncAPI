@@ -1,22 +1,22 @@
 import { Controller, Post, Body, Get, Query, Param } from '@nestjs/common';
 import { ApiQuery } from '@nestjs/swagger';
 import { ContentService } from './content.service';
-import { PlayContentDto } from './dto-content/play.dto';
-import { PauseContentDto } from './dto-content/pause.dto';
+import { PlayViewingSessionDto } from '../viewing-session/dto-viewing-session/play.dto';
+import { PauseViewingSessionDto } from '../viewing-session/dto-viewing-session/pause.dto';
 
 @Controller('content')
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}
 
   @Post('play')
-  async play(@Body() dto: PlayContentDto) {
-    return this.contentService.startViewingSession(dto);
+  async play(@Body() dto: PlayViewingSessionDto) {
+    return this.contentService.play(dto);
+
   }
 
   @Post('pause')
-  async pause(@Body() dto: PauseContentDto) {
-    await this.contentService.saveViewingProgress(dto);
-    return { message: 'Progress saved' };
+  async pause(@Body() dto: PauseViewingSessionDto) {
+    return this.contentService.pause(dto);
   }
 
   @Get('resume')
@@ -24,10 +24,10 @@ export class ContentController {
     @Query('profileId') profileId: string,
     @Query('contentId') contentId: string,
   ) {
-    return this.contentService.getViewingProgress(
-      Number(profileId),
-      Number(contentId),
-    );
+   return this.contentService.resume(
+    Number(profileId),
+    Number(contentId),
+   );
   }
 
   @Get('')
@@ -50,7 +50,7 @@ export class ContentController {
 
   @Get('currently-watching/:profileId')
   async currentlyWatching(@Param('profileId') profileId: string) {
-  return this.contentService.getCurrentlyWatching(Number(profileId));
+  return this.contentService.currentlyWatching(Number(profileId));
   }
 
   @Get('personalised')
