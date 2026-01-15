@@ -1,6 +1,4 @@
--- =========================
--- TABLES
--- =========================
+
 
 CREATE TABLE IF NOT EXISTS projectmembers (
     id SERIAL PRIMARY KEY,
@@ -457,15 +455,7 @@ SELECT setval('season_season_id_seq', (SELECT MAX(season_id) FROM season));
 SELECT setval('episode_episode_id_seq', (SELECT MAX(episode_id) FROM episode));
 SELECT setval('viewing_session_viewing_session_id_seq', (SELECT MAX(viewing_session_id) FROM viewing_session));
 
--- =========================
--- INTERNAL EMPLOYEES & DBMS ACCESS (UPDATED)
--- =========================
--- This block models the three internal DBMS roles (JUNIOR, MID, SENIOR) exactly as required:
--- - JUNIOR: read-only basic account status + general profile details (no financials)
--- - MID: inherits JUNIOR + limited updates (profile settings + activate/deactivate/unblock accounts) (no financials)
--- - SENIOR: full access incl. subscriptions/discounts/invitations + viewing history (and related tables)
---
--- NOTE: These are NOLOGIN roles. Real DB login users should be created by an admin and granted membership.
+
 
 CREATE TABLE IF NOT EXISTS internal_role (
     internal_role_id SERIAL PRIMARY KEY,
@@ -503,7 +493,7 @@ END$$;
 
 -- Lock down default access (IMPORTANT)
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
-GRANT USAGE ON SCHEMA public TO junior_employee, mid_employee, senior_employee;
+-- GRANTs for roles moved to roles.sql for correct creation order
 
 -- Also revoke any default PUBLIC access to objects (IMPORTANT)
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC;
@@ -512,67 +502,53 @@ REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC;
 -- =========================
 -- JUNIOR: read-only basic info (no password_hash, no financial tables)
 -- =========================
-GRANT SELECT (account_id, email, is_verified, status, failed_login_attempts, created_timestamp)
-ON account TO junior_employee;
-
-GRANT SELECT (profile_id, account_id, age_category_id, name, image_url, min_quality_id)
-ON profile TO junior_employee;
-
-GRANT SELECT ON age_category, genre, quality TO junior_employee;
-
-GRANT SELECT (content_id, age_category_id, title, description, content_type, quality_id, duration_minutes)
-ON content TO junior_employee;
-
-GRANT SELECT ON series, season, episode, movie, series_genre, content_genre TO junior_employee;
+-- GRANTs for roles moved to roles.sql for correct creation order
 
 -- =========================
 -- MID: inherits JUNIOR + limited updates (no financial access)
 -- =========================
-GRANT junior_employee TO mid_employee;
+-- GRANTs for roles moved to roles.sql for correct creation order
 
 -- Adjust profile settings
-GRANT UPDATE (name, age_category_id, image_url, min_quality_id) ON profile TO mid_employee;
+-- GRANTs for roles moved to roles.sql for correct creation order
 
 -- Activate/deactivate accounts / unblock by resetting failed attempts
-GRANT UPDATE (status, failed_login_attempts) ON account TO mid_employee;
+-- GRANTs for roles moved to roles.sql for correct creation order
 
 -- =========================
 -- SENIOR: full access including subscriptions/discounts/invitations + viewing history
 -- =========================
-GRANT junior_employee TO senior_employee;
+-- GRANTs for roles moved to roles.sql for correct creation order
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
-    account,
-    profile,
-    account_subscription,
-    discount,
-    invitation,
-    viewing_session,
-    watchlist_item,
-    content,
-    series,
-    season,
-    episode,
-    movie,
-    account_token,
-    profile_genre_preference,
-    content_genre,
-    series_genre,
-    quality,
-    genre,
-    age_category
-TO senior_employee;
+-- GRANTs for roles moved to roles.sql for correct creation order
 
 -- Sequence permissions for inserts on SERIAL columns
-GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO senior_employee;
+-- GRANTs for roles moved to roles.sql for correct creation order
 
--- =========================
--- Admin note: create real logins and grant them a role
--- Example (requires privileges):
--- CREATE ROLE alice_db LOGIN PASSWORD 'strongpass';
--- GRANT junior_employee TO alice_db;
--- CREATE ROLE bob_db LOGIN PASSWORD 'strongpass';
--- GRANT mid_employee TO bob_db;
--- CREATE ROLE carol_db LOGIN PASSWORD 'strongpass';
--- GRANT senior_employee TO carol_db;
--- =========================
+
+CREATE OR REPLACE VIEW api_v_account_profile AS
+SELECT 
+    a.account_id, a.email, a.is_verified, a.status, a.created_timestamp,
+    p.profile_id, p.name AS profile_name, p.age_category_id, p.image_url, p.min_quality_id
+FROM account a
+JOIN profile p ON a.account_id = p.account_id;
+
+CREATE OR REPLACE FUNCTION api_get_profiles_for_account(api_account_id INT)
+RETURNS TABLE(
+    profile_id INT,
+    profile_name VARCHAR,
+    age_category_id INT,
+    image_url VARCHAR,
+    min_quality_id INT
+) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT p.profile_id, p.name, p.age_category_id, p.image_url, p.min_quality_id
+        FROM profile p
+        WHERE p.account_id = api_account_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- GRANTs for roles moved to roles.sql for correct creation order
+
+
