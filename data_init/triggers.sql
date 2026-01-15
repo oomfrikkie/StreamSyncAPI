@@ -1,3 +1,47 @@
+-- Trigger: Create discount when invitation is accepted
+CREATE OR REPLACE FUNCTION create_discount_on_invitation_accept()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_inviter INT;
+BEGIN
+  IF NEW.status = 'ACCEPTED' AND OLD.status <> 'ACCEPTED' THEN
+    v_inviter := NEW.inviter_account_id;
+
+    INSERT INTO discount (account_id, source, percentage, valid_from, valid_until)
+    VALUES (
+      NEW.invitee_account_id,
+      'INVITATION',
+      20,
+      CURRENT_DATE,
+      CURRENT_DATE + INTERVAL '1 month'
+    )
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO discount (account_id, source, percentage, valid_from, valid_until)
+    VALUES (
+      v_inviter,
+      'INVITATION',
+      20,
+      CURRENT_DATE,
+      CURRENT_DATE + INTERVAL '1 month'
+    )
+    ON CONFLICT DO NOTHING;
+
+    UPDATE invitation
+    SET discount_expiry_date = CURRENT_DATE + INTERVAL '1 month'
+    WHERE invitation_id = NEW.invitation_id;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_create_discount_on_invitation_accept ON invitation;
+
+CREATE TRIGGER trg_create_discount_on_invitation_accept
+AFTER UPDATE OF status
+ON invitation
+FOR EACH ROW
+EXECUTE FUNCTION create_discount_on_invitation_accept();
 CREATE OR REPLACE FUNCTION remove_from_watchlist_on_complete()
 RETURNS TRIGGER AS $$
 BEGIN
