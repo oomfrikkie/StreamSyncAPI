@@ -1,6 +1,4 @@
--- =========================
--- TABLES
--- =========================
+
 
 CREATE TABLE IF NOT EXISTS projectmembers (
     id SERIAL PRIMARY KEY,
@@ -456,3 +454,101 @@ SELECT setval('series_series_id_seq', (SELECT MAX(series_id) FROM series));
 SELECT setval('season_season_id_seq', (SELECT MAX(season_id) FROM season));
 SELECT setval('episode_episode_id_seq', (SELECT MAX(episode_id) FROM episode));
 SELECT setval('viewing_session_viewing_session_id_seq', (SELECT MAX(viewing_session_id) FROM viewing_session));
+
+
+
+CREATE TABLE IF NOT EXISTS internal_role (
+    internal_role_id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS internal_employee (
+    employee_id SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE, -- should map to DB login name
+    display_name VARCHAR(255),
+    internal_role_id INT NOT NULL,
+    FOREIGN KEY (internal_role_id) REFERENCES internal_role(internal_role_id) ON DELETE RESTRICT
+);
+
+INSERT INTO internal_role (internal_role_id, name, description) VALUES
+(1, 'JUNIOR', 'View basic account & profile data only'),
+(2, 'MID', 'Can update profile settings and activate/deactivate accounts (no financials)'),
+(3, 'SENIOR', 'Full access including subscriptions, payments and viewing history')
+ON CONFLICT (name) DO NOTHING;
+
+-- Create PostgreSQL roles (NOLOGIN)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'junior_employee') THEN
+    CREATE ROLE junior_employee NOLOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'mid_employee') THEN
+    CREATE ROLE mid_employee NOLOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'senior_employee') THEN
+    CREATE ROLE senior_employee NOLOGIN;
+  END IF;
+END$$;
+
+-- Lock down default access (IMPORTANT)
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+-- GRANTs for roles moved to roles.sql for correct creation order
+
+-- Also revoke any default PUBLIC access to objects (IMPORTANT)
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM PUBLIC;
+
+-- =========================
+-- JUNIOR: read-only basic info (no password_hash, no financial tables)
+-- =========================
+-- GRANTs for roles moved to roles.sql for correct creation order
+
+-- =========================
+-- MID: inherits JUNIOR + limited updates (no financial access)
+-- =========================
+-- GRANTs for roles moved to roles.sql for correct creation order
+
+-- Adjust profile settings
+-- GRANTs for roles moved to roles.sql for correct creation order
+
+-- Activate/deactivate accounts / unblock by resetting failed attempts
+-- GRANTs for roles moved to roles.sql for correct creation order
+
+-- =========================
+-- SENIOR: full access including subscriptions/discounts/invitations + viewing history
+-- =========================
+-- GRANTs for roles moved to roles.sql for correct creation order
+
+-- GRANTs for roles moved to roles.sql for correct creation order
+
+-- Sequence permissions for inserts on SERIAL columns
+-- GRANTs for roles moved to roles.sql for correct creation order
+
+
+CREATE OR REPLACE VIEW api_v_account_profile AS
+SELECT 
+    a.account_id, a.email, a.is_verified, a.status, a.created_timestamp,
+    p.profile_id, p.name AS profile_name, p.age_category_id, p.image_url, p.min_quality_id
+FROM account a
+JOIN profile p ON a.account_id = p.account_id;
+
+CREATE OR REPLACE FUNCTION api_get_profiles_for_account(api_account_id INT)
+RETURNS TABLE(
+    profile_id INT,
+    profile_name VARCHAR,
+    age_category_id INT,
+    image_url VARCHAR,
+    min_quality_id INT
+) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT p.profile_id, p.name, p.age_category_id, p.image_url, p.min_quality_id
+        FROM profile p
+        WHERE p.account_id = api_account_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- GRANTs for roles moved to roles.sql for correct creation order
+
+
