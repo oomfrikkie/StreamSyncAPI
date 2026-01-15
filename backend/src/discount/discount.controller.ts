@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Post } from '@nestjs/common';
 import { DiscountService } from './discount.service';
 import { DiscountResponseDto } from './dto-discount/discount-response.dto';
 
@@ -34,5 +34,21 @@ export class DiscountController {
     if (price !== undefined) response.price = price;
 
     return response;
+  }
+
+  @Post('apply')
+  async applyDiscount(@Body() body: { accountId: number; price: number }) {
+    const { accountId, price } = body;
+    const discount = await this.discountService.getActiveDiscountForAccount(accountId);
+    if (!discount) {
+      return { price, percentage: 0, valid_until: null, active: false };
+    }
+    const discounted = price * (1 - discount.percentage / 100);
+    return {
+      price: Math.round((discounted + Number.EPSILON) * 100) / 100,
+      percentage: discount.percentage,
+      valid_until: discount.validUntil.toISOString().split('T')[0],
+      active: discount.active,
+    };
   }
 }
