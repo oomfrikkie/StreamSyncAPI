@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Post } from '@nestjs/common';
+import { Controller, Get, Query, Post, Body } from '@nestjs/common';
 import { DiscountService } from './discount.service';
 import { DiscountResponseDto } from './dto-discount/discount-response.dto';
 
