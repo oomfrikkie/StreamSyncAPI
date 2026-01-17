@@ -2,32 +2,32 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsBoolean, Min } from 'class-validator';
 
 export class PauseViewingSessionDto {
-  @ApiProperty()
+  @ApiProperty({ example: 1 })
   @IsInt()
   @Min(1)
   profileId: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: 10 })
   @IsInt()
   @Min(1)
   contentId: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: 120 })
   @IsInt()
   @Min(0)
   lastPositionSeconds: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: 300 })
   @IsInt()
   @Min(0)
   watchedSeconds: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: 360 })
   @IsInt()
   @Min(1)
   durationSeconds: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: false })
   @IsBoolean()
   autoContinuedNext: boolean;
 }

@@ -1,5 +1,9 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Req, Res } from '@nestjs/common';
+import { ApiProduces, ApiOkResponse, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
+import * as js2xmlparser from 'js2xmlparser';
 import { AccountService } from './account.service';
+import { AccountDto } from './dto-account/account.dto';
 import { CreateAccountDto } from './dto-account/create-account.dto';
 import { LoginDto } from './dto-account/login.dto';
 import { ForgotPasswordDto } from './dto-account/forgot-password.dto';
@@ -17,48 +21,107 @@ export class AccountController {
   ) {}
 
 
+  @ApiProduces('application/xml', 'application/json')
+  @ApiConsumes('application/xml', 'application/json')
+  @ApiBody({ type: CreateAccountDto, description: 'Register account', required: true })
+  @ApiOkResponse({ type: AccountDto })
   @Post('register')
-  create(@Body() dto: CreateAccountDto) {
-    return this.accountService.create(dto);
-  }
-
-  @Post('login')
-  async login(@Body() dto: LoginDto) {
-    const accountLogin = await this.accountService.login(dto);
-    if (!accountLogin.account) {
-      return accountLogin;
+  async create(@Body() dto: CreateAccountDto, @Req() req: Request, @Res() res: Response) {
+    const result = await this.accountService.create(dto);
+    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
+      res.set('Content-Type', 'application/xml');
+      return res.send(js2xmlparser.parse('account', result.account));
     }
-    const token = await this.authService.generateJwt(accountLogin.account);
-    return { ...accountLogin, ...token };
+    return res.json(result);
   }
 
+  @ApiProduces('application/xml', 'application/json')
+  @ApiConsumes('application/xml', 'application/json')
+  @ApiBody({ type: LoginDto, description: 'Login', required: true })
+  @ApiOkResponse({ type: LoginDto })
+  @Post('login')
+  async login(@Body() dto: LoginDto, @Req() req: Request, @Res() res: Response) {
+    const accountLogin = await this.accountService.login(dto);
+    const dtoResult = Object.assign(new LoginDto(), {
+      email: dto.email,
+      password: dto.password
+    });
+    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
+      res.set('Content-Type', 'application/xml');
+      return res.send(js2xmlparser.parse('login', dtoResult));
+    }
+    return res.json(dtoResult);
+  }
+
+  @ApiProduces('application/json', 'application/xml')
+  @ApiOkResponse({ type: ForgotPasswordDto })
   @Get('verify/:token')
-  verify(@Param('token') token: string) {
-    return this.tokenService.verifyToken({
+  async verify(@Param('token') token: string, @Req() req: Request, @Res() res: Response) {
+    const result = await this.tokenService.verifyToken({
       token,
       token_type: 'EMAIL_VERIFICATION',
     });
+    const dtoResult = Object.assign(new ForgotPasswordDto(), result);
+    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
+      res.set('Content-Type', 'application/xml');
+      return res.send(js2xmlparser.parse('verify', dtoResult));
+    }
+    return res.json(dtoResult);
   }
 
+  @ApiProduces('application/xml', 'application/json')
+  @ApiConsumes('application/xml', 'application/json')
+  @ApiBody({ type: ForgotPasswordDto, description: 'Forgot password', required: true })
+  @ApiOkResponse({ type: ForgotPasswordDto })
   @Post('forgot-password')
-  forgotPassword(@Body() dto: ForgotPasswordDto) {
-    return this.accountService.requestPasswordReset(dto);
+  async forgotPassword(@Body() dto: ForgotPasswordDto, @Req() req: Request, @Res() res: Response) {
+    const result = await this.accountService.requestPasswordReset(dto);
+    const dtoResult = Object.assign(new ForgotPasswordDto(), result);
+    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
+      res.set('Content-Type', 'application/xml');
+      return res.send(js2xmlparser.parse('forgotPassword', dtoResult));
+    }
+    return res.json(dtoResult);
   }
 
+  @ApiProduces('application/json', 'application/xml')
+  @ApiOkResponse({ type: ResetPasswordDto })
   @Post('reset-password')
-  resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.accountService.resetPassword(dto);
+  async resetPassword(@Body() dto: ResetPasswordDto, @Req() req: Request, @Res() res: Response) {
+    const result = await this.accountService.resetPassword(dto);
+    const dtoResult = Object.assign(new ResetPasswordDto(), result);
+    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
+      res.set('Content-Type', 'application/xml');
+      return res.send(js2xmlparser.parse('resetPassword', dtoResult));
+    }
+    return res.json(dtoResult);
   }
 
+
+  @ApiProduces('application/json', 'application/xml')
+  @ApiOkResponse({ type: AccountDto })
   @Get(':id')
-  getAccountById(@Param('id') id: string) {
-    return this.accountService.findById(Number(id));
+  async getAccountById(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
+    const data = await this.accountService.findById(Number(id));
+    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
+      res.set('Content-Type', 'application/xml');
+      return res.send(js2xmlparser.parse('account', data));
+    }
+    return res.json(data);
   }
 
  
- @Get(':accountId/profiles')
-getProfilesByAccount(@Param('accountId') accountId: string) {
-  return this.accountService.getProfilesByAccount(Number(accountId));
-}
+
+  @ApiProduces('application/json', 'application/xml')
+  @ApiResponse({ status: 200, description: 'Profiles response' })
+  @Get(':accountId/profiles')
+  async getProfilesByAccount(@Param('accountId') accountId: string, @Req() req: Request, @Res() res: Response) {
+    const data = await this.accountService.getProfilesByAccount(Number(accountId));
+    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
+      res.set('Content-Type', 'application/xml');
+      return res.send(js2xmlparser.parse('profiles', { profile: data }));
+    }
+    return res.json(data);
+  }
 
 }

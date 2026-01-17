@@ -16,6 +16,7 @@ import { SeasonModule } from './season/season.modules';
 import { WatchlistModule } from './watchlist/watchlist.module';
 import { InvitationModule } from './invitation/invitation.module';
 import { MovieModule } from './movie/movie.module';
+import { DiscountModule } from './discount/discount.module';
 
 
 @Module({
@@ -46,8 +47,9 @@ import { MovieModule } from './movie/movie.module';
     SeasonModule,
     WatchlistModule,
     InvitationModule,
-      MovieModule,
+    MovieModule,
     ViewingSessionModule,
+    DiscountModule,
   ],
 })
 export class AppModule {}

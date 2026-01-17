@@ -4,6 +4,7 @@ import { Repository, In } from 'typeorm';
 import { Profile } from './profile.entity';
 import { Genre } from '../content/genre/genre.entity';
 import { CreateProfileDto } from './dto-profile/create-profile.dto';
+import { ProfileDto } from './dto-profile/profile.dto';
 
 @Injectable()
 export class ProfileService {
@@ -15,7 +16,7 @@ export class ProfileService {
     private readonly genreRepo: Repository<Genre>,
   ) {}
 
-  async create(dto: CreateProfileDto) {
+  async create(dto: CreateProfileDto): Promise<ProfileDto> {
     const genres = dto.preferredGenres
       ? await this.genreRepo.find({
           where: { genreId: In(dto.preferredGenres) },
@@ -32,11 +33,29 @@ export class ProfileService {
     
     });
 
-    return this.profileRepo.save(profile);
+    const saved = await this.profileRepo.save(profile);
+    return Object.assign(new ProfileDto(), {
+      id: saved.profile_id,
+      account_id: saved.account_id,
+      age_category_id: saved.age_category_id,
+      name: saved.name,
+      image_url: saved.image_url,
+      preferredGenres: saved.preferredGenres?.map(g => g.genreId),
+      minQualityId: saved.min_quality_id,
+    });
   }
 
-  async getAllProfiles() {
-    return this.profileRepo.find();
+  async getAllProfiles(): Promise<ProfileDto[]> {
+    const profiles = await this.profileRepo.find({ relations: ['preferredGenres'] });
+    return profiles.map(saved => Object.assign(new ProfileDto(), {
+      id: saved.profile_id,
+      account_id: saved.account_id,
+      age_category_id: saved.age_category_id,
+      name: saved.name,
+      image_url: saved.image_url,
+      preferredGenres: saved.preferredGenres?.map(g => g.genreId),
+      minQualityId: saved.min_quality_id,
+    }));
   }
 
   async delete(id: number) {

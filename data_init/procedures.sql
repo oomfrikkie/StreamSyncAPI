@@ -3,15 +3,29 @@
 CREATE OR REPLACE FUNCTION add_season_to_series(
     p_series_id INT,
     p_season_number INT
-) RETURNS VOID AS $$
+) RETURNS TABLE (
+    season_id INT,
+    series_id INT,
+    series_name VARCHAR,
+    season_number INT
+) AS $$
 DECLARE
     found_season_id INT;
 BEGIN
-    -- Check if the season already exists
-    SELECT season_id INTO found_season_id FROM season WHERE series_id = p_series_id AND season_number = p_season_number;
-    IF found_season_id IS NULL THEN
-        INSERT INTO season (series_id, season_number) VALUES (p_series_id, p_season_number);
+    -- Check if the series exists
+    IF NOT EXISTS (SELECT 1 FROM series WHERE series.series_id = p_series_id) THEN
+        RAISE EXCEPTION 'Series does not exist';
     END IF;
+    -- Check if the season already exists
+    SELECT s.season_id INTO found_season_id FROM season s WHERE s.series_id = p_series_id AND s.season_number = p_season_number;
+    IF found_season_id IS NULL THEN
+        INSERT INTO season (series_id, season_number) VALUES (p_series_id, p_season_number) RETURNING season.season_id INTO found_season_id;
+    END IF;
+    RETURN QUERY
+      SELECT s.season_id, s.series_id, sr.name AS series_name, s.season_number
+      FROM season s
+      JOIN series sr ON sr.series_id = s.series_id
+      WHERE s.series_id = p_series_id AND s.season_number = p_season_number;
 END;
 $$ LANGUAGE plpgsql;
 

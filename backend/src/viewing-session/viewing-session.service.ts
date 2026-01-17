@@ -34,29 +34,19 @@ export class ViewingSessionService {
   }
 
   async saveViewingProgress(dto: PauseViewingSessionDto) {
-    const completed =
-      dto.lastPositionSeconds / dto.durationSeconds >= 0.95;
+    const completed = dto.lastPositionSeconds / dto.durationSeconds >= 0.95;
     const query = `
-      INSERT INTO viewing_session
-        (
-          profile_id,
-          content_id,
-          last_position_seconds,
-          watched_seconds,
-          completed,
-          auto_continued_next,
-          start_timestamp
-        )
-      VALUES ($1, $2, $3, $4, $5, $6, NOW())
-      ON CONFLICT (profile_id, content_id)
-      DO UPDATE SET
-        last_position_seconds = EXCLUDED.last_position_seconds,
-        watched_seconds = EXCLUDED.watched_seconds,
-        completed = EXCLUDED.completed,
-        auto_continued_next = EXCLUDED.auto_continued_next,
-        start_timestamp = NOW();
+      UPDATE viewing_session
+      SET
+        last_position_seconds = $3,
+        watched_seconds = $4,
+        completed = $5,
+        auto_continued_next = $6,
+        start_timestamp = NOW()
+      WHERE profile_id = $1 AND content_id = $2
+      RETURNING *;
     `;
-    await this.dataSource.query(query, [
+    const result = await this.dataSource.query(query, [
       dto.profileId,
       dto.contentId,
       dto.lastPositionSeconds,
@@ -64,6 +54,9 @@ export class ViewingSessionService {
       completed,
       dto.autoContinuedNext,
     ]);
+    if (result.length === 0) {
+      return { message: 'No active viewing session found' };
+    }
     return { message: 'Progress saved' };
   }
 
