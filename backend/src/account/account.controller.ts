@@ -6,13 +6,15 @@ import { ForgotPasswordDto } from './dto-account/forgot-password.dto';
 import { ResetPasswordDto } from './dto-account/reset-password.dto';
 import { AccountTokenService } from './token/account-token.service';
 import { ProfileService } from 'src/profile/profile.service';
+import { AuthService } from '../auth/auth.service';
 
 @Controller('account')
 export class AccountController {
   constructor(
-  private readonly accountService: AccountService,
-  private readonly tokenService: AccountTokenService,
-) {}
+    private readonly accountService: AccountService,
+    private readonly tokenService: AccountTokenService,
+    private readonly authService: AuthService,
+  ) {}
 
 
   @Post('register')
@@ -21,8 +23,13 @@ export class AccountController {
   }
 
   @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.accountService.login(dto);
+  async login(@Body() dto: LoginDto) {
+    const accountLogin = await this.accountService.login(dto);
+    if (!accountLogin.account) {
+      return accountLogin;
+    }
+    const token = await this.authService.generateJwt(accountLogin.account);
+    return { ...accountLogin, ...token };
   }
 
   @Get('verify/:token')
