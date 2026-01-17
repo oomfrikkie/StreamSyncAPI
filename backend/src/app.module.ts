@@ -15,6 +15,7 @@ import { SeriesModule } from './series/series.modules';
 import { SeasonModule } from './season/season.modules';
 import { WatchlistModule } from './watchlist/watchlist.module';
 import { InvitationModule } from './invitation/invitation.module';
+import { MovieModule } from './movie/movie.module';
 
 
 @Module({
@@ -45,6 +46,7 @@ import { InvitationModule } from './invitation/invitation.module';
     SeasonModule,
     WatchlistModule,
     InvitationModule,
+      MovieModule,
     ViewingSessionModule,
   ],
 })
