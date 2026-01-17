@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { AddSeriesDto } from './dto-series/add-series.dto';
 
 @Injectable()
 export class SeriesService {
@@ -49,5 +50,13 @@ export class SeriesService {
 
   return this.dataSource.query(query, [seriesId]);
 }
+
+  async addSeries(dto: AddSeriesDto) {
+    const result = await this.dataSource.query(
+      `INSERT INTO series (name) VALUES ($1) RETURNING *`,
+      [dto.name]
+    );
+    return result[0];
+  }
 
 }
