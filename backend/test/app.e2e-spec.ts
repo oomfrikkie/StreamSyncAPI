@@ -1160,4 +1160,167 @@ describe('AppController (e2e)', () => {
         .expect(400);
     });
   });
+
+  describe('/seasons/:seasonId/episodes (GET)', () => {
+    const getOrCreateAgeCategoryId = async (): Promise<number> => {
+      const rows: Array<{ age_category_id: number }> = await dataSource.query(
+        'SELECT age_category_id FROM "age_category" ORDER BY age_category_id ASC LIMIT 1',
+      );
+      if (rows?.[0]?.age_category_id) return rows[0].age_category_id;
+
+      const inserted: Array<{ age_category_id: number }> =
+        await dataSource.query(
+          'INSERT INTO "age_category"(name, guidelines_text) VALUES ($1, $2) RETURNING age_category_id',
+          ['E2E', 'E2E'],
+        );
+      return inserted[0].age_category_id;
+    };
+
+    const getQualityId = async (): Promise<number> => {
+      const rows: Array<{ quality_id: number }> = await dataSource.query(
+        'SELECT quality_id FROM "quality" ORDER BY quality_id ASC LIMIT 1',
+      );
+      if (!rows?.[0]?.quality_id) {
+        throw new Error(
+          'No quality rows found; expected seed data in quality table',
+        );
+      }
+      return rows[0].quality_id;
+    };
+
+    const getSeriesIdFromSeriesResponse = (
+      body: unknown,
+    ): number | undefined => {
+      if (!body || typeof body !== 'object') return undefined;
+      const topLevel = body as Record<string, unknown>;
+      const seriesId = topLevel['series_id'];
+      if (typeof seriesId === 'number') return seriesId;
+      const id = topLevel['id'];
+      if (typeof id === 'number') return id;
+      return undefined;
+    };
+
+    it('returns episodes for a season that has episodes', async () => {
+      const ageCategoryId = await getOrCreateAgeCategoryId();
+      const qualityId = await getQualityId();
+
+      const seriesRes = await request(app.getHttpServer())
+        .post('/series')
+        .send({ name: `E2E Series ${Date.now()}` })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup series expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const seriesId = getSeriesIdFromSeriesResponse(seriesRes.body);
+      if (!seriesId) {
+        throw new Error(
+          `Could not determine created series id from /series response: ${JSON.stringify(seriesRes.body)}`,
+        );
+      }
+
+      const seasonNumber = 1;
+      const episodeNumber = 1;
+      const title = `E2E Episode ${Date.now()}`;
+
+      await request(app.getHttpServer())
+        .post('/episodes')
+        .send({
+          series_id: seriesId,
+          season_number: seasonNumber,
+          episode_number: episodeNumber,
+          title,
+          description: 'E2E',
+          age_category_id: ageCategoryId,
+          quality_id: qualityId,
+          duration_minutes: 42,
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup episode expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const seasonRows: Array<{ season_id: number }> = await dataSource.query(
+        'SELECT season_id FROM "season" WHERE series_id = $1 AND season_number = $2 ORDER BY season_id DESC LIMIT 1',
+        [seriesId, seasonNumber],
+      );
+      const seasonId = seasonRows?.[0]?.season_id;
+      if (!seasonId) {
+        throw new Error('Could not find created season_id in DB');
+      }
+
+      const res = await request(app.getHttpServer())
+        .get(`/seasons/${seasonId}/episodes`)
+        .expect(200);
+
+      const episodes = res.body as unknown;
+      expect(Array.isArray(episodes)).toBe(true);
+      const episodeArray = episodes as Array<Record<string, unknown>>;
+      expect(episodeArray.length).toBeGreaterThan(0);
+      expect(episodeArray[0]['episode_number']).toBe(episodeNumber);
+      expect(episodeArray[0]['title']).toBe(title);
+    });
+
+    it('returns empty array for a season with no episodes', async () => {
+      const seriesRes = await request(app.getHttpServer())
+        .post('/series')
+        .send({ name: `E2E Empty Season Series ${Date.now()}` })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup series expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const seriesId = getSeriesIdFromSeriesResponse(seriesRes.body);
+      if (!seriesId) {
+        throw new Error(
+          `Could not determine created series id from /series response: ${JSON.stringify(seriesRes.body)}`,
+        );
+      }
+
+      const seasonRes = await request(app.getHttpServer())
+        .post('/seasons')
+        .send({ series_id: seriesId, season_number: 99 })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup season expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const seasonId = (seasonRes.body as Record<string, unknown>)[
+        'season_id'
+      ] as number | undefined;
+
+      if (!seasonId || typeof seasonId !== 'number') {
+        throw new Error(
+          `Could not determine created season id from /seasons response: ${JSON.stringify(seasonRes.body)}`,
+        );
+      }
+
+      const res = await request(app.getHttpServer())
+        .get(`/seasons/${seasonId}/episodes`)
+        .expect(200);
+
+      const episodes = res.body as unknown;
+      expect(Array.isArray(episodes)).toBe(true);
+      const episodeArray = episodes as Array<unknown>;
+      expect(episodeArray.length).toBe(0);
+    });
+
+    it('returns 500 for non-numeric seasonId (current behavior)', async () => {
+      await request(app.getHttpServer())
+        .get('/seasons/not-a-number/episodes')
+        .expect(500);
+    });
+  });
 });
