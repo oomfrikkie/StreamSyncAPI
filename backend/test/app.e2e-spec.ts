@@ -1323,4 +1323,256 @@ describe('AppController (e2e)', () => {
         .expect(500);
     });
   });
+
+  describe('/invitations (Invitation)', () => {
+    const cleanupInvitationsForAccounts = async (accountIds: number[]) => {
+      if (accountIds.length === 0) return;
+      await dataSource.query(
+        'DELETE FROM "invitation" WHERE inviter_account_id = ANY($1::int[]) OR invitee_account_id = ANY($1::int[])',
+        [accountIds],
+      );
+    };
+
+    const cleanupAccountByEmail = async (email: string) => {
+      await dataSource
+        .createQueryBuilder()
+        .delete()
+        .from('account')
+        .where('email = :email', { email })
+        .execute();
+    };
+
+    const getAccountIdFromRegisterResponse = (
+      body: unknown,
+    ): number | undefined => {
+      if (!body || typeof body !== 'object') return undefined;
+      const topLevel = body as Record<string, unknown>;
+      const account = topLevel['account'];
+      if (!account || typeof account !== 'object') return undefined;
+      const nested = account as Record<string, unknown>;
+
+      const id = nested['id'];
+      if (typeof id === 'number') return id;
+
+      const accountId = nested['account_id'];
+      if (typeof accountId === 'number') return accountId;
+
+      return undefined;
+    };
+
+    it('creates an invitation, lists it for the invitee, gets it by id, and accepts it', async () => {
+      const inviterEmail = `e2e_inviter_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
+      const inviteeEmail = `e2e_invitee_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
+
+      await cleanupAccountByEmail(inviterEmail);
+      await cleanupAccountByEmail(inviteeEmail);
+
+      const inviterRes = await request(app.getHttpServer())
+        .post('/account/register')
+        .send({
+          email: inviterEmail,
+          first_name: 'Inviter',
+          last_name: 'User',
+          password: 'strongpassword123',
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup inviter register expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+      const inviterAccountId = getAccountIdFromRegisterResponse(
+        inviterRes.body,
+      );
+      if (!inviterAccountId) {
+        await cleanupAccountByEmail(inviterEmail);
+        throw new Error(
+          `Could not determine inviter account id from /account/register response: ${JSON.stringify(inviterRes.body)}`,
+        );
+      }
+
+      const inviteeRes = await request(app.getHttpServer())
+        .post('/account/register')
+        .send({
+          email: inviteeEmail,
+          first_name: 'Invitee',
+          last_name: 'User',
+          password: 'strongpassword123',
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup invitee register expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+      const inviteeAccountId = getAccountIdFromRegisterResponse(
+        inviteeRes.body,
+      );
+      if (!inviteeAccountId) {
+        await cleanupInvitationsForAccounts([inviterAccountId]);
+        await cleanupAccountByEmail(inviterEmail);
+        await cleanupAccountByEmail(inviteeEmail);
+        throw new Error(
+          `Could not determine invitee account id from /account/register response: ${JSON.stringify(inviteeRes.body)}`,
+        );
+      }
+
+      const createRes = await request(app.getHttpServer())
+        .post('/invitations')
+        .send({ inviterAccountId, inviteeAccountId })
+        .expect(200);
+
+      const created = createRes.body as Record<string, unknown>;
+      expect(created['status']).toBe('PENDING');
+
+      const invitationRows: Array<{ invitation_id: number }> =
+        await dataSource.query(
+          'SELECT invitation_id FROM "invitation" WHERE inviter_account_id = $1 AND invitee_account_id = $2 ORDER BY invitation_id DESC LIMIT 1',
+          [inviterAccountId, inviteeAccountId],
+        );
+      const invitationId = invitationRows?.[0]?.invitation_id;
+      if (!invitationId) {
+        await cleanupInvitationsForAccounts([
+          inviterAccountId,
+          inviteeAccountId,
+        ]);
+        await cleanupAccountByEmail(inviterEmail);
+        await cleanupAccountByEmail(inviteeEmail);
+        throw new Error('Could not find created invitation_id in DB');
+      }
+
+      const listRes = await request(app.getHttpServer())
+        .get(`/invitations/account/${inviteeAccountId}`)
+        .expect(200);
+      const listBody = listRes.body as unknown;
+      expect(Array.isArray(listBody)).toBe(true);
+      const listArr = listBody as Array<Record<string, unknown>>;
+      expect(listArr.length).toBeGreaterThan(0);
+      expect(listArr.some((x) => x['status'] === 'PENDING')).toBe(true);
+
+      const getByIdRes = await request(app.getHttpServer())
+        .get(`/invitations/${invitationId}`)
+        .expect(200);
+      const byIdBody = getByIdRes.body as Record<string, unknown>;
+      expect(byIdBody['status']).toBe('PENDING');
+
+      const acceptRes = await request(app.getHttpServer())
+        .post(`/invitations/accept/${invitationId}`)
+        .expect(200);
+      const accepted = acceptRes.body as Record<string, unknown>;
+      expect(accepted['status']).toBe('ACCEPTED');
+
+      const discountExpiry = accepted['discount_expiry_date'];
+      if (typeof discountExpiry !== 'undefined') {
+        expect(typeof discountExpiry).toBe('string');
+        expect(discountExpiry).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      }
+
+      await cleanupInvitationsForAccounts([inviterAccountId, inviteeAccountId]);
+      await cleanupAccountByEmail(inviterEmail);
+      await cleanupAccountByEmail(inviteeEmail);
+    });
+
+    it('rejects invalid payload (DTO validation)', async () => {
+      await request(app.getHttpServer())
+        .post('/invitations')
+        .send({ inviterAccountId: 'not-a-number', inviteeAccountId: null })
+        .expect(400);
+    });
+
+    it('returns 404 when accepting a non-existent invitation', async () => {
+      await request(app.getHttpServer())
+        .post('/invitations/accept/99999999')
+        .expect(404);
+    });
+  });
+
+  describe('/movie/by-id (GET)', () => {
+    const getOrCreateAgeCategoryId = async (): Promise<number> => {
+      const rows: Array<{ age_category_id: number }> = await dataSource.query(
+        'SELECT age_category_id FROM "age_category" ORDER BY age_category_id ASC LIMIT 1',
+      );
+      if (rows?.[0]?.age_category_id) return rows[0].age_category_id;
+
+      const inserted: Array<{ age_category_id: number }> =
+        await dataSource.query(
+          'INSERT INTO "age_category"(name, guidelines_text) VALUES ($1, $2) RETURNING age_category_id',
+          ['E2E', 'E2E'],
+        );
+      return inserted[0].age_category_id;
+    };
+
+    const getQualityId = async (): Promise<number> => {
+      const rows: Array<{ quality_id: number }> = await dataSource.query(
+        'SELECT quality_id FROM "quality" ORDER BY quality_id ASC LIMIT 1',
+      );
+      if (!rows?.[0]?.quality_id) {
+        throw new Error(
+          'No quality rows found; expected seed data in quality table',
+        );
+      }
+      return rows[0].quality_id;
+    };
+
+    it('returns a movie by id', async () => {
+      const ageCategoryId = await getOrCreateAgeCategoryId();
+      const qualityId = await getQualityId();
+      const title = `E2E Movie ${Date.now()}`;
+
+      const createRes = await request(app.getHttpServer())
+        .post('/movie')
+        .send({
+          age_category_id: ageCategoryId,
+          title,
+          description: 'E2E',
+          quality_id: qualityId,
+          duration_minutes: 123,
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup movie create expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const created = createRes.body as Record<string, unknown>;
+      const movieId = created['movie_id'];
+      if (typeof movieId !== 'number') {
+        throw new Error(
+          `Could not determine created movie_id from /movie response: ${JSON.stringify(createRes.body)}`,
+        );
+      }
+
+      const res = await request(app.getHttpServer())
+        .get('/movie/by-id')
+        .query({ id: movieId })
+        .expect(200);
+
+      const movie = res.body as Record<string, unknown>;
+      expect(movie['movie_id']).toBe(movieId);
+      expect(movie['title']).toBe(title);
+      expect(movie['age_category_id']).toBe(ageCategoryId);
+      expect(movie['quality_id']).toBe(qualityId);
+      expect(movie['duration_minutes']).toBe(123);
+    });
+
+    it('returns null for non-existent movie id (current behavior)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/movie/by-id')
+        .query({ id: 99999999 })
+        .expect(200);
+
+      expect(res.body).toBeNull();
+    });
+
+    it('returns 500 for non-numeric id (current behavior)', async () => {
+      await request(app.getHttpServer())
+        .get('/movie/by-id')
+        .query({ id: 'not-a-number' })
+        .expect(500);
+    });
+  });
 });
