@@ -506,4 +506,343 @@ describe('AppController (e2e)', () => {
         });
     });
   });
+
+  describe('/account/reset-password (POST)', () => {
+    const cleanupAccountByEmail = async (email: string) => {
+      await dataSource
+        .createQueryBuilder()
+        .delete()
+        .from('account')
+        .where('email = :email', { email })
+        .execute();
+    };
+
+    const getAccountIdFromRegisterResponse = (
+      body: unknown,
+    ): number | undefined => {
+      if (!body || typeof body !== 'object') return undefined;
+      const topLevel = body as Record<string, unknown>;
+      const account = topLevel['account'];
+      if (!account || typeof account !== 'object') return undefined;
+      const nested = account as Record<string, unknown>;
+
+      const id = nested['id'];
+      if (typeof id === 'number') return id;
+
+      const accountId = nested['account_id'];
+      if (typeof accountId === 'number') return accountId;
+
+      return undefined;
+    };
+
+    const getVerificationTokenFromRegisterResponse = (
+      body: unknown,
+    ): string | undefined => {
+      if (!body || typeof body !== 'object') return undefined;
+      const topLevel = body as Record<string, unknown>;
+      const token = topLevel['verification_token'];
+      if (typeof token === 'string' && token.length > 0) return token;
+      return undefined;
+    };
+
+    it('resets password with a valid PASSWORD_RESET token and marks token as used', async () => {
+      const email = `e2e_reset_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
+      const password = 'strongpassword123';
+      const newPassword = 'newstrongpassword123';
+
+      await cleanupAccountByEmail(email);
+
+      const registerRes = await request(app.getHttpServer())
+        .post('/account/register')
+        .send({
+          email,
+          first_name: 'Test',
+          last_name: 'User',
+          password,
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup register expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const accountId = getAccountIdFromRegisterResponse(registerRes.body);
+      const verificationToken = getVerificationTokenFromRegisterResponse(
+        registerRes.body,
+      );
+
+      if (!accountId || !verificationToken) {
+        await cleanupAccountByEmail(email);
+        throw new Error(
+          `Missing accountId/verificationToken from /account/register response: ${JSON.stringify(registerRes.body)}`,
+        );
+      }
+
+      await request(app.getHttpServer())
+        .post('/account/forgot-password')
+        .send({ email })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup forgot-password expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const tokenRows: Array<{
+        token: string;
+        token_id: number;
+        is_used: boolean;
+      }> = await dataSource.query(
+        'SELECT token, token_id, is_used FROM "account_token" WHERE account_id = $1 AND token_type = $2 ORDER BY token_id DESC LIMIT 1',
+        [accountId, 'PASSWORD_RESET'],
+      );
+
+      const resetToken = tokenRows?.[0]?.token;
+      const resetTokenId = tokenRows?.[0]?.token_id;
+
+      if (!resetToken || !resetTokenId) {
+        await cleanupAccountByEmail(email);
+        throw new Error('No PASSWORD_RESET token found for created account');
+      }
+
+      await request(app.getHttpServer())
+        .post('/account/reset-password')
+        .send({ token: resetToken, new_password: newPassword })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Expected reset-password to succeed, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const usedRows: Array<{ is_used: boolean }> = await dataSource.query(
+        'SELECT is_used FROM "account_token" WHERE token_id = $1',
+        [resetTokenId],
+      );
+
+      expect(usedRows?.[0]?.is_used).toBe(true);
+
+      await request(app.getHttpServer())
+        .get(`/account/verify/${verificationToken}`)
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup verify expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      await request(app.getHttpServer())
+        .post('/account/login')
+        .send({ email, password: newPassword })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Expected login with new password to succeed, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      await cleanupAccountByEmail(email);
+    });
+
+    it('rejects invalid reset token', async () => {
+      await request(app.getHttpServer())
+        .post('/account/reset-password')
+        .send({
+          token: 'not-a-real-token',
+          new_password: 'newstrongpassword123',
+        })
+        .expect((r) => {
+          if (r.status >= 200 && r.status < 300) {
+            throw new Error(
+              `Expected invalid reset token to fail, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+    });
+
+    it('rejects reusing a PASSWORD_RESET token', async () => {
+      const email = `e2e_reset_reuse_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
+      const password = 'strongpassword123';
+
+      await cleanupAccountByEmail(email);
+
+      const registerRes = await request(app.getHttpServer())
+        .post('/account/register')
+        .send({
+          email,
+          first_name: 'Test',
+          last_name: 'User',
+          password,
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup register expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const accountId = getAccountIdFromRegisterResponse(registerRes.body);
+      if (!accountId) {
+        await cleanupAccountByEmail(email);
+        throw new Error(
+          `Could not determine created account id from /account/register response: ${JSON.stringify(registerRes.body)}`,
+        );
+      }
+
+      await request(app.getHttpServer())
+        .post('/account/forgot-password')
+        .send({ email })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup forgot-password expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const tokenRows: Array<{ token: string }> = await dataSource.query(
+        'SELECT token FROM "account_token" WHERE account_id = $1 AND token_type = $2 ORDER BY token_id DESC LIMIT 1',
+        [accountId, 'PASSWORD_RESET'],
+      );
+
+      const resetToken = tokenRows?.[0]?.token;
+      if (!resetToken) {
+        await cleanupAccountByEmail(email);
+        throw new Error('No PASSWORD_RESET token found for created account');
+      }
+
+      await request(app.getHttpServer())
+        .post('/account/reset-password')
+        .send({ token: resetToken, new_password: 'newstrongpassword123' })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Expected reset-password to succeed, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      await request(app.getHttpServer())
+        .post('/account/reset-password')
+        .send({ token: resetToken, new_password: 'anothernewpassword123' })
+        .expect((r) => {
+          if (r.status >= 200 && r.status < 300) {
+            throw new Error(
+              `Expected reused reset token to fail, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      await cleanupAccountByEmail(email);
+    });
+
+    it('rejects short new_password (DTO validation)', async () => {
+      await request(app.getHttpServer())
+        .post('/account/reset-password')
+        .send({ token: 'not-a-real-token', new_password: '123' })
+        .expect(400);
+    });
+  });
+
+  describe('/account/:id (GET)', () => {
+    const cleanupAccountByEmail = async (email: string) => {
+      await dataSource
+        .createQueryBuilder()
+        .delete()
+        .from('account')
+        .where('email = :email', { email })
+        .execute();
+    };
+
+    const getAccountIdFromRegisterResponse = (
+      body: unknown,
+    ): number | undefined => {
+      if (!body || typeof body !== 'object') return undefined;
+      const topLevel = body as Record<string, unknown>;
+      const account = topLevel['account'];
+      if (!account || typeof account !== 'object') return undefined;
+      const nested = account as Record<string, unknown>;
+
+      const id = nested['id'];
+      if (typeof id === 'number') return id;
+
+      const accountId = nested['account_id'];
+      if (typeof accountId === 'number') return accountId;
+
+      return undefined;
+    };
+
+    it('returns account details for an existing account id', async () => {
+      const email = `e2e_get_account_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
+
+      await cleanupAccountByEmail(email);
+
+      const registerRes = await request(app.getHttpServer())
+        .post('/account/register')
+        .send({
+          email,
+          first_name: 'Test',
+          last_name: 'User',
+          password: 'strongpassword123',
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup register expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const accountId = getAccountIdFromRegisterResponse(registerRes.body);
+      if (!accountId) {
+        await cleanupAccountByEmail(email);
+        throw new Error(
+          `Could not determine created account id from /account/register response: ${JSON.stringify(registerRes.body)}`,
+        );
+      }
+
+      const res = await request(app.getHttpServer())
+        .get(`/account/${accountId}`)
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Expected get account to succeed, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      await cleanupAccountByEmail(email);
+
+      expect(res.body).toBeDefined();
+      expect(typeof res.body).toBe('object');
+      if (res.body && typeof res.body === 'object') {
+        expect((res.body as Record<string, unknown>)['email']).toBe(email);
+      }
+    });
+
+    it('returns non-2xx for a non-existent id', async () => {
+      await request(app.getHttpServer())
+        .get('/account/99999999')
+        .expect((r) => {
+          if (r.status >= 200 && r.status < 300) {
+            throw new Error(
+              `Expected non-existent account to fail, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+    });
+
+    it('returns 500 for non-numeric id (current behavior)', async () => {
+      await request(app.getHttpServer())
+        .get('/account/not-a-number')
+        .expect(500);
+    });
+  });
 });
