@@ -6,29 +6,50 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 import { AccountModule } from './account/account.module';
+import { AccountTokenModule } from './account/token/account-token.module';
+import { ProfileModule } from './profile/profile.module';
+import { ContentModule } from './content/content.module';
+import { ViewingSessionModule } from './viewing-session/viewing-session.module';
+import { EpisodeModule } from './episode/episode.modules'; 
+import { SeriesModule } from './series/series.modules';
+import { SeasonModule } from './season/season.modules';
+import { WatchlistModule } from './watchlist/watchlist.module';
+import { InvitationModule } from './invitation/invitation.module';
+import { MovieModule } from './movie/movie.module';
+import { DiscountModule } from './discount/discount.module';
+
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '../.env',  // your root .env (you're correct)
     }),
 
     TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.POSTGRES_HOST,
-      port: parseInt(process.env.POSTGRES_PORT!, 10),
-      username: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
-      database: process.env.POSTGRES_DB,
-      autoLoadEntities: true,
-      synchronize: false,
-    }),
+  type: 'postgres',
+  host: process.env.POSTGRES_HOST,
+  port: parseInt(process.env.POSTGRES_PORT!, 10),
+  username: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+  database: process.env.POSTGRES_DB,
+  autoLoadEntities: true,
+  synchronize: false,
+  logging: ['query', 'error'],
+}),
 
-    // ✅ THIS WAS MISSING — WITHOUT THIS THERE ARE NO /account ROUTES
+
     AccountModule,
+    AccountTokenModule,
+    ProfileModule,
+    ContentModule,
+    EpisodeModule,
+    SeriesModule,
+    SeasonModule,
+    WatchlistModule,
+    InvitationModule,
+    MovieModule,
+    ViewingSessionModule,
+    DiscountModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

@@ -1,16 +1,19 @@
-How to install the environment
+# Technology Choices & Rationale
 
-Clone the repository
+## Authentication: Why JWT?
 
-Open Git Bash in the project root
+We chose JWT (JSON Web Tokens) for authentication because:
+- **Statelessness:** JWTs allow the backend to remain stateless, as all user session data is encoded in the token itself, reducing server memory usage.
+- **Scalability:** Stateless authentication makes it easier to scale the application horizontally (across multiple servers/containers).
+- **Interoperability:** JWTs are a widely adopted standard, compatible with many frontend frameworks and third-party services.
+- **Security:** JWTs can be signed and optionally encrypted, ensuring data integrity and authenticity.
+- **Flexibility:** JWTs can carry custom claims, making it easy to include user roles, permissions, and other metadata.
 
-Run:
-bash set-up.sh
-(This installs all backend dependencies)
+## Other Key Decisions
 
-Make sure you have a .env file in the project root
-
-To start both Docker and the backend together, run:
+- **Docker:** We use Docker to ensure consistent environments across development, testing, and production.
+- **PostgreSQL:** Chosen for its reliability, advanced features, and strong support for relational data.
+- **NestJS:** Provides a modular, scalable structure for building robust backend APIs.
 bash start-dev.sh
 
 

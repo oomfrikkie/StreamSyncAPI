@@ -1,1 +1,82 @@
+# =========================
+# ENV FILES (EVERYWHERE)
+# =========================
 .env
+.env.*
+**/.env
+**/.env.*
+
+# =========================
+# NODE / NEST / REACT
+# =========================
+node_modules/
+dist/
+build/
+dist-ssr/
+.next/
+out/
+
+# =========================
+# LOGS
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# =========================
+# COVERAGE / TESTS
+# =========================
+coverage/
+.nyc_output/
+
+# =========================
+# TEMP / RUNTIME
+# =========================
+.tmp/
+.temp/
+pids/
+*.pid
+*.pid.lock
+*.seed
+
+# =========================
+# OS FILES
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE / EDITORS
+# =========================
+.idea/
+.project
+.classpath
+.c9/
+.settings/
+*.launch
+*.sublime-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =========================
+# VSCODE (allow config if you want)
+# =========================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# =========================
+# DOCKER / DATA (optional but smart)
+# =========================
+**/postgres-data/
+**/pgdata/
+**/data/
