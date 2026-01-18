@@ -1,4 +1,25 @@
 services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+
+  backend-e2e:
+    build: ./backend
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    depends_on:
+      - postgres
+    command: ["npm", "run", "test:e2e"]
+
+
   postgres:
     container_name: postgres_db
     image: postgres:16
