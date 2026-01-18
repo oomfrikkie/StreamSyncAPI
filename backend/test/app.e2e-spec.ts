@@ -259,4 +259,251 @@ describe('AppController (e2e)', () => {
         });
     });
   });
+
+  describe('/account/login (POST)', () => {
+    const cleanupAccountByEmail = async (email: string) => {
+      await dataSource
+        .createQueryBuilder()
+        .delete()
+        .from('account')
+        .where('email = :email', { email })
+        .execute();
+    };
+
+    it('logs in with valid credentials', async () => {
+      const email = `e2e_login_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
+      const password = 'strongpassword123';
+
+      await cleanupAccountByEmail(email);
+
+      const registerRes = await request(app.getHttpServer())
+        .post('/account/register')
+        .send({
+          email,
+          first_name: 'Test',
+          last_name: 'User',
+          password,
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup register expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const getVerificationTokenFromRegisterResponse = (
+        body: unknown,
+      ): string | undefined => {
+        if (!body || typeof body !== 'object') return undefined;
+        const topLevel = body as Record<string, unknown>;
+        const token = topLevel['verification_token'];
+        if (typeof token === 'string' && token.length > 0) return token;
+        return undefined;
+      };
+
+      const verificationToken = getVerificationTokenFromRegisterResponse(
+        registerRes.body,
+      );
+
+      if (!verificationToken) {
+        await cleanupAccountByEmail(email);
+        throw new Error(
+          `No verification_token returned by /account/register: ${JSON.stringify(registerRes.body)}`,
+        );
+      }
+
+      await request(app.getHttpServer())
+        .get(`/account/verify/${verificationToken}`)
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup verify expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const res = await request(app.getHttpServer())
+        .post('/account/login')
+        .send({ email, password })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Expected login to succeed, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      await cleanupAccountByEmail(email);
+
+      expect(res.body).toBeDefined();
+      expect(typeof res.body).toBe('object');
+      if (res.body && typeof res.body === 'object') {
+        expect((res.body as Record<string, unknown>)['email']).toBe(email);
+      }
+    });
+
+    it('rejects login with wrong password', async () => {
+      const email = `e2e_login_wrong_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
+      const password = 'strongpassword123';
+
+      await cleanupAccountByEmail(email);
+
+      await request(app.getHttpServer())
+        .post('/account/register')
+        .send({
+          email,
+          first_name: 'Test',
+          last_name: 'User',
+          password,
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup register expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      await request(app.getHttpServer())
+        .post('/account/login')
+        .send({ email, password: 'wrongpassword' })
+        .expect((r) => {
+          if (r.status >= 200 && r.status < 300) {
+            throw new Error(
+              `Expected wrong-password login to fail, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      await cleanupAccountByEmail(email);
+    });
+
+    it('rejects login for unknown email', async () => {
+      await request(app.getHttpServer())
+        .post('/account/login')
+        .send({
+          email: `e2e_unknown_${Date.now()}@example.com`,
+          password: 'strongpassword123',
+        })
+        .expect((r) => {
+          if (r.status >= 200 && r.status < 300) {
+            throw new Error(
+              `Expected unknown-email login to fail, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+    });
+
+    it('rejects invalid email format (DTO validation)', async () => {
+      await request(app.getHttpServer())
+        .post('/account/login')
+        .send({ email: 'not-an-email', password: 'strongpassword123' })
+        .expect(400);
+    });
+  });
+
+  describe('/account/forgot-password (POST)', () => {
+    const cleanupAccountByEmail = async (email: string) => {
+      await dataSource
+        .createQueryBuilder()
+        .delete()
+        .from('account')
+        .where('email = :email', { email })
+        .execute();
+    };
+
+    const getAccountIdFromRegisterResponse = (
+      body: unknown,
+    ): number | undefined => {
+      if (!body || typeof body !== 'object') return undefined;
+      const topLevel = body as Record<string, unknown>;
+      const account = topLevel['account'];
+      if (!account || typeof account !== 'object') return undefined;
+      const nested = account as Record<string, unknown>;
+
+      const id = nested['id'];
+      if (typeof id === 'number') return id;
+
+      const accountId = nested['account_id'];
+      if (typeof accountId === 'number') return accountId;
+
+      return undefined;
+    };
+
+    it('creates a PASSWORD_RESET token for an existing email', async () => {
+      const email = `e2e_forgot_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
+      const password = 'strongpassword123';
+
+      await cleanupAccountByEmail(email);
+
+      const registerRes = await request(app.getHttpServer())
+        .post('/account/register')
+        .send({
+          email,
+          first_name: 'Test',
+          last_name: 'User',
+          password,
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup register expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const accountId = getAccountIdFromRegisterResponse(registerRes.body);
+      if (!accountId) {
+        await cleanupAccountByEmail(email);
+        throw new Error(
+          `Could not determine created account id from /account/register response: ${JSON.stringify(registerRes.body)}`,
+        );
+      }
+
+      await request(app.getHttpServer())
+        .post('/account/forgot-password')
+        .send({ email })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Expected forgot-password to succeed, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const tokenRows: Array<{ token: string; is_used: boolean }> =
+        await dataSource.query(
+          'SELECT token, is_used FROM "account_token" WHERE account_id = $1 AND token_type = $2 ORDER BY token_id DESC LIMIT 1',
+          [accountId, 'PASSWORD_RESET'],
+        );
+
+      await cleanupAccountByEmail(email);
+
+      expect(tokenRows.length).toBeGreaterThan(0);
+      expect(typeof tokenRows[0]?.token).toBe('string');
+      expect(tokenRows[0]?.token.length).toBeGreaterThan(0);
+      expect(tokenRows[0]?.is_used).toBe(false);
+    });
+
+    it('rejects invalid email format (DTO validation)', async () => {
+      await request(app.getHttpServer())
+        .post('/account/forgot-password')
+        .send({ email: 'not-an-email' })
+        .expect(400);
+    });
+
+    it('handles unknown email without server error', async () => {
+      await request(app.getHttpServer())
+        .post('/account/forgot-password')
+        .send({ email: `e2e_unknown_forgot_${Date.now()}@example.com` })
+        .expect((r) => {
+          if (r.status === 500) {
+            throw new Error(
+              `Expected unknown-email forgot-password not to 500, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+    });
+  });
 });
