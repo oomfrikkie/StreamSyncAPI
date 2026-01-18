@@ -8,6 +8,17 @@ services:
     depends_on:
       - postgres
 
+  backend-e2e:
+    build: ./backend
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    depends_on:
+      - postgres
+    command: ["npm", "run", "test:e2e"]
+
   frontend:
     build: ./frontend
     ports:
