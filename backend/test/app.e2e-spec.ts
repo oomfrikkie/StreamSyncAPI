@@ -845,4 +845,319 @@ describe('AppController (e2e)', () => {
         .expect(500);
     });
   });
+
+  describe('/account/:accountId/profiles (GET)', () => {
+    const cleanupAccountByEmail = async (email: string) => {
+      await dataSource
+        .createQueryBuilder()
+        .delete()
+        .from('account')
+        .where('email = :email', { email })
+        .execute();
+    };
+
+    const getAccountIdFromRegisterResponse = (
+      body: unknown,
+    ): number | undefined => {
+      if (!body || typeof body !== 'object') return undefined;
+      const topLevel = body as Record<string, unknown>;
+      const account = topLevel['account'];
+      if (!account || typeof account !== 'object') return undefined;
+      const nested = account as Record<string, unknown>;
+
+      const id = nested['id'];
+      if (typeof id === 'number') return id;
+
+      const accountId = nested['account_id'];
+      if (typeof accountId === 'number') return accountId;
+
+      return undefined;
+    };
+
+    const getOrCreateAgeCategoryId = async (): Promise<number> => {
+      const rows: Array<{ age_category_id: number }> = await dataSource.query(
+        'SELECT age_category_id FROM "age_category" ORDER BY age_category_id ASC LIMIT 1',
+      );
+      if (rows?.[0]?.age_category_id) return rows[0].age_category_id;
+
+      const inserted: Array<{ age_category_id: number }> =
+        await dataSource.query(
+          'INSERT INTO "age_category"(name, guidelines_text) VALUES ($1, $2) RETURNING age_category_id',
+          ['E2E', 'E2E'],
+        );
+      return inserted[0].age_category_id;
+    };
+
+    const getQualityId = async (): Promise<number> => {
+      const rows: Array<{ quality_id: number }> = await dataSource.query(
+        'SELECT quality_id FROM "quality" ORDER BY quality_id ASC LIMIT 1',
+      );
+      if (!rows?.[0]?.quality_id) {
+        throw new Error(
+          'No quality rows found; expected seed data in quality table',
+        );
+      }
+      return rows[0].quality_id;
+    };
+
+    it('returns profiles for an account that has profiles', async () => {
+      const email = `e2e_profiles_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
+
+      await cleanupAccountByEmail(email);
+
+      const registerRes = await request(app.getHttpServer())
+        .post('/account/register')
+        .send({
+          email,
+          first_name: 'Test',
+          last_name: 'User',
+          password: 'strongpassword123',
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup register expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const accountId = getAccountIdFromRegisterResponse(registerRes.body);
+      if (!accountId) {
+        await cleanupAccountByEmail(email);
+        throw new Error(
+          `Could not determine created account id from /account/register response: ${JSON.stringify(registerRes.body)}`,
+        );
+      }
+
+      const ageCategoryId = await getOrCreateAgeCategoryId();
+      const qualityId = await getQualityId();
+      const profileName = `E2E Profile ${Date.now()}`;
+
+      await dataSource.query(
+        'INSERT INTO "profile"(account_id, age_category_id, name, image_url, min_quality_id) VALUES ($1, $2, $3, $4, $5)',
+        [accountId, ageCategoryId, profileName, null, qualityId],
+      );
+
+      const res = await request(app.getHttpServer())
+        .get(`/account/${accountId}/profiles`)
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Expected get profiles to succeed, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      await cleanupAccountByEmail(email);
+
+      const profiles = res.body as unknown;
+      expect(Array.isArray(profiles)).toBe(true);
+      const profileArray = profiles as Array<Record<string, unknown>>;
+      expect(profileArray.length).toBeGreaterThan(0);
+      expect(profileArray[0]).toBeDefined();
+      expect(profileArray[0]['account_id']).toBe(accountId);
+      expect(profileArray[0]['name']).toBe(profileName);
+    });
+
+    it('returns an empty array when an account has no profiles', async () => {
+      const email = `e2e_profiles_empty_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
+
+      await cleanupAccountByEmail(email);
+
+      const registerRes = await request(app.getHttpServer())
+        .post('/account/register')
+        .send({
+          email,
+          first_name: 'Test',
+          last_name: 'User',
+          password: 'strongpassword123',
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup register expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const accountId = getAccountIdFromRegisterResponse(registerRes.body);
+      if (!accountId) {
+        await cleanupAccountByEmail(email);
+        throw new Error(
+          `Could not determine created account id from /account/register response: ${JSON.stringify(registerRes.body)}`,
+        );
+      }
+
+      const res = await request(app.getHttpServer())
+        .get(`/account/${accountId}/profiles`)
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Expected get profiles to succeed, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      await cleanupAccountByEmail(email);
+
+      const profiles = res.body as unknown;
+      expect(Array.isArray(profiles)).toBe(true);
+      const profileArray = profiles as Array<unknown>;
+      expect(profileArray.length).toBe(0);
+    });
+
+    it('returns 500 for non-numeric accountId (current behavior)', async () => {
+      await request(app.getHttpServer())
+        .get('/account/not-a-number/profiles')
+        .expect(500);
+    });
+  });
+
+  describe('/viewing-session (POST)', () => {
+    const cleanupAccountByEmail = async (email: string) => {
+      await dataSource
+        .createQueryBuilder()
+        .delete()
+        .from('account')
+        .where('email = :email', { email })
+        .execute();
+    };
+
+    const getAccountIdFromRegisterResponse = (
+      body: unknown,
+    ): number | undefined => {
+      if (!body || typeof body !== 'object') return undefined;
+      const topLevel = body as Record<string, unknown>;
+      const account = topLevel['account'];
+      if (!account || typeof account !== 'object') return undefined;
+      const nested = account as Record<string, unknown>;
+
+      const id = nested['id'];
+      if (typeof id === 'number') return id;
+
+      const accountId = nested['account_id'];
+      if (typeof accountId === 'number') return accountId;
+
+      return undefined;
+    };
+
+    const getOrCreateAgeCategoryId = async (): Promise<number> => {
+      const rows: Array<{ age_category_id: number }> = await dataSource.query(
+        'SELECT age_category_id FROM "age_category" ORDER BY age_category_id ASC LIMIT 1',
+      );
+      if (rows?.[0]?.age_category_id) return rows[0].age_category_id;
+
+      const inserted: Array<{ age_category_id: number }> =
+        await dataSource.query(
+          'INSERT INTO "age_category"(name, guidelines_text) VALUES ($1, $2) RETURNING age_category_id',
+          ['E2E', 'E2E'],
+        );
+      return inserted[0].age_category_id;
+    };
+
+    const getQualityId = async (): Promise<number> => {
+      const rows: Array<{ quality_id: number }> = await dataSource.query(
+        'SELECT quality_id FROM "quality" ORDER BY quality_id ASC LIMIT 1',
+      );
+      if (!rows?.[0]?.quality_id) {
+        throw new Error(
+          'No quality rows found; expected seed data in quality table',
+        );
+      }
+      return rows[0].quality_id;
+    };
+
+    const createContent = async (ageCategoryId: number, qualityId: number) => {
+      const rows: Array<{ content_id: number }> = await dataSource.query(
+        'INSERT INTO "content"(age_category_id, title, description, content_type, quality_id, duration_minutes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING content_id',
+        [
+          ageCategoryId,
+          `E2E Content ${Date.now()}`,
+          'E2E',
+          'MOVIE',
+          qualityId,
+          90,
+        ],
+      );
+      return rows[0].content_id;
+    };
+
+    it('starts a viewing session and is idempotent for the same (profileId, contentId)', async () => {
+      const email = `e2e_vs_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
+
+      await cleanupAccountByEmail(email);
+
+      const registerRes = await request(app.getHttpServer())
+        .post('/account/register')
+        .send({
+          email,
+          first_name: 'Test',
+          last_name: 'User',
+          password: 'strongpassword123',
+        })
+        .expect((r) => {
+          if (r.status < 200 || r.status >= 300) {
+            throw new Error(
+              `Setup register expected 2xx, got ${r.status}: ${JSON.stringify(r.body)}`,
+            );
+          }
+        });
+
+      const accountId = getAccountIdFromRegisterResponse(registerRes.body);
+      if (!accountId) {
+        await cleanupAccountByEmail(email);
+        throw new Error(
+          `Could not determine created account id from /account/register response: ${JSON.stringify(registerRes.body)}`,
+        );
+      }
+
+      const ageCategoryId = await getOrCreateAgeCategoryId();
+      const qualityId = await getQualityId();
+      const contentId = await createContent(ageCategoryId, qualityId);
+
+      const profileRows: Array<{ profile_id: number }> = await dataSource.query(
+        'INSERT INTO "profile"(account_id, age_category_id, name, image_url, min_quality_id) VALUES ($1, $2, $3, $4, $5) RETURNING profile_id',
+        [
+          accountId,
+          ageCategoryId,
+          `E2E VS Profile ${Date.now()}`,
+          null,
+          qualityId,
+        ],
+      );
+      const profileId = profileRows[0].profile_id;
+
+      const playRes1 = await request(app.getHttpServer())
+        .post('/viewing-session')
+        .send({ profileId, contentId })
+        .expect(201);
+
+      const session1 = playRes1.body as Record<string, unknown>;
+      expect(session1['profile_id']).toBe(profileId);
+      expect(session1['content_id']).toBe(contentId);
+
+      await request(app.getHttpServer())
+        .post('/viewing-session')
+        .send({ profileId, contentId })
+        .expect(201);
+
+      const countRows: Array<{ count: string }> = await dataSource.query(
+        'SELECT COUNT(*)::text AS count FROM "viewing_session" WHERE profile_id = $1 AND content_id = $2',
+        [profileId, contentId],
+      );
+      expect(Number(countRows[0].count)).toBe(1);
+
+      await dataSource.query('DELETE FROM "content" WHERE content_id = $1', [
+        contentId,
+      ]);
+      await cleanupAccountByEmail(email);
+    });
+
+    it('rejects invalid profileId/contentId (DTO validation)', async () => {
+      await request(app.getHttpServer())
+        .post('/viewing-session')
+        .send({ profileId: 0, contentId: 0 })
+        .expect(400);
+    });
+  });
 });
