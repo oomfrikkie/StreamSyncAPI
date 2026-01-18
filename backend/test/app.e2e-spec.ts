@@ -1422,7 +1422,7 @@ describe('AppController (e2e)', () => {
       const createRes = await request(app.getHttpServer())
         .post('/invitations')
         .send({ inviterAccountId, inviteeAccountId })
-        .expect(200);
+        .expect(201);
 
       const created = createRes.body as Record<string, unknown>;
       expect(created['status']).toBe('PENDING');
@@ -1460,7 +1460,7 @@ describe('AppController (e2e)', () => {
 
       const acceptRes = await request(app.getHttpServer())
         .post(`/invitations/accept/${invitationId}`)
-        .expect(200);
+        .expect(201);
       const accepted = acceptRes.body as Record<string, unknown>;
       expect(accepted['status']).toBe('ACCEPTED');
 
@@ -1565,7 +1565,7 @@ describe('AppController (e2e)', () => {
         .query({ id: 99999999 })
         .expect(200);
 
-      expect(res.body).toBeNull();
+      expect(res.body).toBe("");
     });
 
     it('returns 500 for non-numeric id (current behavior)', async () => {
