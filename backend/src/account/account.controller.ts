@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Req, Res } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Req, Res, All, ParseIntPipe } from '@nestjs/common';
 import { ApiProduces, ApiOkResponse, ApiResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
@@ -9,7 +9,6 @@ import { LoginDto } from './dto-account/login.dto';
 import { ForgotPasswordDto } from './dto-account/forgot-password.dto';
 import { ResetPasswordDto } from './dto-account/reset-password.dto';
 import { AccountTokenService } from './token/account-token.service';
-import { ProfileService } from 'src/profile/profile.service';
 import { AuthService } from '../auth/auth.service';
 
 @Controller('account')
@@ -19,7 +18,6 @@ export class AccountController {
     private readonly tokenService: AccountTokenService,
     private readonly authService: AuthService,
   ) {}
-
 
   @ApiProduces('application/xml', 'application/json')
   @ApiConsumes('application/xml', 'application/json')
@@ -35,6 +33,11 @@ export class AccountController {
     return res.json(result);
   }
 
+  @All('register')
+  registerMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
   @ApiProduces('application/xml', 'application/json')
   @ApiConsumes('application/xml', 'application/json')
   @ApiBody({ type: LoginDto, description: 'Login', required: true })
@@ -42,15 +45,22 @@ export class AccountController {
   @Post('login')
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res() res: Response) {
     const accountLogin = await this.accountService.login(dto);
-    const dtoResult = Object.assign(new LoginDto(), {
-      email: dto.email,
-      password: dto.password
-    });
+    const jwtResult = await this.authService.generateJwt(accountLogin.account);
+    const dtoResult = {
+      message: accountLogin.message,
+      account_id: accountLogin.account_id,
+      access_token: jwtResult.access_token,
+    };
     if (req.headers.accept && req.headers.accept.includes('application/xml')) {
       res.set('Content-Type', 'application/xml');
       return res.send(js2xmlparser.parse('login', dtoResult));
     }
     return res.json(dtoResult);
+  }
+
+  @All('login')
+  loginMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
   }
 
   @ApiProduces('application/json', 'application/xml')
@@ -84,6 +94,11 @@ export class AccountController {
     return res.json(dtoResult);
   }
 
+  @All('forgot-password')
+  forgotPasswordMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
   @ApiProduces('application/json', 'application/xml')
   @ApiOkResponse({ type: ResetPasswordDto })
   @Post('reset-password')
@@ -97,12 +112,16 @@ export class AccountController {
     return res.json(dtoResult);
   }
 
+  @All('reset-password')
+  resetPasswordMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
 
   @ApiProduces('application/json', 'application/xml')
   @ApiOkResponse({ type: AccountDto })
   @Get(':id')
-  async getAccountById(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
-    const data = await this.accountService.findById(Number(id));
+  async getAccountById(@Param('id', ParseIntPipe) id: number, @Req() req: Request, @Res() res: Response) {
+    const data = await this.accountService.findById(id);
     if (req.headers.accept && req.headers.accept.includes('application/xml')) {
       res.set('Content-Type', 'application/xml');
       return res.send(js2xmlparser.parse('account', data));
@@ -110,18 +129,15 @@ export class AccountController {
     return res.json(data);
   }
 
- 
-
   @ApiProduces('application/json', 'application/xml')
   @ApiResponse({ status: 200, description: 'Profiles response' })
   @Get(':accountId/profiles')
-  async getProfilesByAccount(@Param('accountId') accountId: string, @Req() req: Request, @Res() res: Response) {
-    const data = await this.accountService.getProfilesByAccount(Number(accountId));
+  async getProfilesByAccount(@Param('accountId', ParseIntPipe) accountId: number, @Req() req: Request, @Res() res: Response) {
+    const data = await this.accountService.getProfilesByAccount(accountId);
     if (req.headers.accept && req.headers.accept.includes('application/xml')) {
       res.set('Content-Type', 'application/xml');
       return res.send(js2xmlparser.parse('profiles', { profile: data }));
     }
     return res.json(data);
   }
-
 }
