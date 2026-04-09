@@ -1,10 +1,11 @@
 // ...imports and class definition remain unchanged...
-import { Controller, Post, Patch, Body, Get, Param, Req, Res } from '@nestjs/common';
+import { Controller, Post, Patch, Body, Get, Param, Req, Res, UseGuards } from '@nestjs/common';
 import { Query } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
-import { ApiProduces, ApiOkResponse, ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { ApiProduces, ApiOkResponse, ApiBody, ApiConsumes, ApiBearerAuth } from '@nestjs/swagger';
 import { ViewingSessionService } from './viewing-session.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PlayViewingSessionDto } from './dto-viewing-session/play.dto';
 import { PauseViewingSessionDto } from './dto-viewing-session/pause.dto';
 import { ViewingSessionResponseDto } from './dto-viewing-session/viewing-session-response.dto';
@@ -65,6 +66,8 @@ export class ViewingSessionController {
       }
     }
   })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @Post()
   async createViewingSession(@Body() dto: PlayViewingSessionDto, @Req() req: Request, @Res() res: Response) {
     // Debug log: print the parsed request body
@@ -111,6 +114,8 @@ export class ViewingSessionController {
       }
     }
   })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @Patch()
   async updateViewingSession(@Body() dto: PauseViewingSessionDto, @Req() req: Request, @Res() res: Response) {
     const result = await this.viewingSessionService.saveViewingProgress(dto);

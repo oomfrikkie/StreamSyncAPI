@@ -1,17 +1,20 @@
 
-import { Controller, Get, Param, Post, Body, Req, Res } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
-import { ApiProduces, ApiOkResponse } from '@nestjs/swagger';
+import { ApiProduces, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AddSeasonDto } from './dto-season/add-season.dto';
 import { SeasonService } from './season.service';
 import { SeasonResponseDto } from './dto-season/season-response.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('seasons')
 export class SeasonController {
   constructor(private readonly seasonService: SeasonService) {}
 
   // POST /seasons
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiProduces('application/json', 'application/xml')
   @ApiOkResponse({ type: SeasonResponseDto })
   @Post()

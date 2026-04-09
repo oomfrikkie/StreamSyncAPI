@@ -1,10 +1,11 @@
-import { Controller, Get, Query, Post, Body, Req, Res } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Req, Res, UseGuards } from '@nestjs/common';
 import { MovieService } from './movie.service';
 import { CreateMovieDto } from './movie.dto';
 import { MovieResponseDto } from './movie-response.dto';
-import { ApiTags, ApiProduces, ApiOkResponse } from '@nestjs/swagger';
+import { ApiTags, ApiProduces, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
 import * as js2xmlparser from 'js2xmlparser';
 import type { Request, Response } from 'express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('movie')
 @Controller('movie')
@@ -35,8 +36,8 @@ export class MovieController {
 
   @ApiProduces('application/json', 'application/xml')
   @ApiOkResponse({ type: MovieResponseDto })
-  @Get('by-id')
-  async getMovieById(@Query('id') id: number, @Req() req: Request, @Res() res: Response) {
+  @Get(':id')
+  async getMovieById(@Param('id') id: number, @Req() req: Request, @Res() res: Response) {
     const result = await this.movieService.getMovieById(id);
     let dto;
     if (result) {
@@ -56,6 +57,8 @@ export class MovieController {
     return res.json(dto);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiProduces('application/json', 'application/xml')
   @ApiOkResponse({ type: MovieResponseDto })
   @Post()
