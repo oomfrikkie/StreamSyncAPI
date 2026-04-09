@@ -38,7 +38,7 @@ export class ContentController {
 
   @ApiProduces('application/json', 'application/xml')
   @ApiOkResponse({ type: ContentResponseDto })
-  @Get('by-id/:id')
+  @Get(':id')
   async getById(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const result = await this.contentService.getContentById(Number(id));
     let dto: ContentResponseDto | null = null;

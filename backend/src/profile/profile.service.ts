@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Profile } from './profile.entity';
@@ -33,7 +33,15 @@ export class ProfileService {
     
     });
 
-    const saved = await this.profileRepo.save(profile);
+    let saved: Profile;
+    try {
+      saved = await this.profileRepo.save(profile);
+    } catch (error: any) {
+      if (error?.code === '23503') {
+        throw new BadRequestException('Invalid ID: account_id or age_category_id does not exist');
+      }
+      throw error;
+    }
     return Object.assign(new ProfileDto(), {
       id: saved.profile_id,
       account_id: saved.account_id,
