@@ -2,9 +2,7 @@
 # ENV FILES (EVERYWHERE)
 # =========================
 .env
-.env.*
 **/.env
-**/.env.*
 
 # =========================
 # NODE / NEST / REACT
