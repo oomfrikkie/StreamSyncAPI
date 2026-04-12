@@ -1,5 +1,5 @@
 
-import { Controller, Get, Param, Post, Body, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Req, Res, UseGuards, All } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
 import { ApiProduces, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -56,5 +56,15 @@ export class SeasonController {
   @Get(':seasonId/episodes')
   getEpisodes(@Param('seasonId') seasonId: string) {
     return this.seasonService.getEpisodes(Number(seasonId));
+  }
+
+  @All()
+  baseMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All(':seasonId/episodes')
+  episodesMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
   }
 }
