@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Req, Res, UseGuards, All } from '@nestjs/common';
 import { MovieService } from './movie.service';
 import { CreateMovieDto } from './movie.dto';
 import { MovieResponseDto } from './movie-response.dto';
@@ -80,5 +80,15 @@ export class MovieController {
       return res.send(js2xmlparser.parse('movie', dtoResult));
     }
     return res.json(dtoResult);
+  }
+
+  @All()
+  baseMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All(':id')
+  idMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
   }
 }
