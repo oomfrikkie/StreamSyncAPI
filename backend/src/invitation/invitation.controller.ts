@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Get, Req, Res } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, Req, Res, All } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
 import { InvitationService } from './invitation.service';
@@ -99,5 +99,25 @@ export class InvitationController {
       return res.send(js2xmlparser.parse('invitation', dtoResult));
     }
     return res.json(dtoResult);
+  }
+
+  @All()
+  baseMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All('accept/:id')
+  acceptMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All('account/:accountId')
+  accountMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All(':id')
+  idMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
   }
 }
