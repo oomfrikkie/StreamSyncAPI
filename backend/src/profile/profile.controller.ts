@@ -27,6 +27,8 @@ export class ProfileController {
     return res.json(result);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiProduces('application/json', 'application/xml')
   @ApiOkResponse({ type: [ProfileDto] })
   @Get()
@@ -39,6 +41,8 @@ export class ProfileController {
     return res.json(result);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiProduces('application/json', 'application/xml')
   @Delete(':id')
   async deleteProfile(@Param('id') id: number, @Req() req: Request, @Res() res: Response) {

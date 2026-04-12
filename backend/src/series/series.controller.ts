@@ -1,10 +1,11 @@
-import { Controller, Get, Param, Post, Body, Req, Res } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
-import { ApiProduces, ApiOkResponse } from '@nestjs/swagger';
+import { ApiProduces, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SeriesService } from './series.service';
 import { AddSeriesDto } from './dto-series/add-series.dto';
 import { SeriesResponseDto } from './dto-series/series-response.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('series')
 export class SeriesController {
@@ -47,6 +48,8 @@ export class SeriesController {
     return this.seriesService.getEpisodesBySeriesId(Number(seriesId));
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiProduces('application/json', 'application/xml')
   @ApiOkResponse({ type: SeriesResponseDto })
   @Post()

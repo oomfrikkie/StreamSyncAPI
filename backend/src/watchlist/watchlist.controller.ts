@@ -1,17 +1,20 @@
-import { Controller, Get, Post, Delete, Param, Body, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
-import { ApiProduces, ApiOkResponse, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiProduces, ApiOkResponse, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { WatchlistService } from './watchlist.service';
 import { AddToWatchlistDto } from './dto-watchlist/add-to-watchlist.dto';
 import { WatchlistItemResponseDto } from './dto-watchlist/watchlist-item-response.dto';
 import { WatchlistActionResultDto } from './dto-watchlist/watchlist-action-result.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('watchlist')
 export class WatchlistController {
   constructor(private readonly watchlistService: WatchlistService) {}
 
   // ADD TO WATCHLIST
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiProduces('application/xml', 'application/json')
   @ApiConsumes('application/xml', 'application/json')
   @ApiBody({ type: AddToWatchlistDto, description: 'Add to watchlist', required: true })
@@ -48,6 +51,8 @@ export class WatchlistController {
   }
 
   // REMOVE FROM WATCHLIST
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiProduces('application/json', 'application/xml')
   @ApiOkResponse({ type: WatchlistActionResultDto })
   @Delete(':profileId/:contentId')

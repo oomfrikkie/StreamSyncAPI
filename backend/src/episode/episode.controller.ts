@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Req, Res, UseGuards, All } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
-import { ApiProduces, ApiOkResponse } from '@nestjs/swagger';
+import { ApiProduces, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { EpisodeService } from './episode.service';
 import { CreateEpisodeDto } from './dto-episode/create-episode.dto';
 import { EpisodeResponseDto } from './dto-episode/episode-response.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('episodes')
 export class EpisodeController {
@@ -31,6 +32,8 @@ export class EpisodeController {
     return res.json(dtoArr);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiProduces('application/json', 'application/xml')
   @ApiOkResponse({ type: EpisodeResponseDto })
   @Post()
@@ -51,5 +54,10 @@ export class EpisodeController {
       return res.send(js2xmlparser.parse('episode', dtoResult));
     }
     return res.json(dtoResult);
+  }
+
+  @All()
+  baseMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
   }
 }

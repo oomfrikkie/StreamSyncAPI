@@ -20,8 +20,8 @@ GRANT USAGE ON SCHEMA public TO junior_employee, mid_employee, senior_employee;
 -- Fix: Grant schema usage to API user account
 GRANT USAGE ON SCHEMA public TO api_user_account;
 
--- Fix: Allow API user to use function by granting SELECT on profile
-GRANT SELECT ON profile TO api_user_account;
+-- api_user_account must NOT have direct table access.
+-- It works exclusively via views and stored procedures (see grants at bottom of this file).
 
 GRANT SELECT (account_id, email, is_verified, status, failed_login_attempts, created_timestamp)
 ON account TO junior_employee;
@@ -63,9 +63,19 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
 	series_genre,
 	quality,
 	genre,
-	age_category
+	age_category,
+	internal_role,
+	internal_employee
 TO senior_employee;
 
+-- senior_employee needs sequence usage to INSERT into tables with SERIAL primary keys
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO senior_employee;
+
+-- mid_employee has no access to financial data (discount, invitation, account_subscription)
+-- per assignment requirements.
+
+-- junior_employee: read-only access to internal roles (for reporting/auditing)
+GRANT SELECT ON internal_role TO junior_employee;
 
 -- Create API view and function for API user (moved from init.sql to ensure creation)
 CREATE OR REPLACE VIEW api_v_account_profile AS
@@ -93,3 +103,4 @@ $$ LANGUAGE plpgsql;
 
 GRANT SELECT ON api_v_account_profile TO api_user_account;
 GRANT EXECUTE ON FUNCTION api_get_profiles_for_account(INT) TO api_user_account;
+
