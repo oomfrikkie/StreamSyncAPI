@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Req, Res, UseGuards, All } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
 import { ApiProduces, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -54,5 +54,10 @@ export class EpisodeController {
       return res.send(js2xmlparser.parse('episode', dtoResult));
     }
     return res.json(dtoResult);
+  }
+
+  @All()
+  baseMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
   }
 }
