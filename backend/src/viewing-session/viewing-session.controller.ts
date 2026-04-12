@@ -1,5 +1,5 @@
 // ...imports and class definition remain unchanged...
-import { Controller, Post, Patch, Body, Get, Param, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Post, Patch, Body, Get, Param, Req, Res, UseGuards, All } from '@nestjs/common';
 import { Query } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
@@ -196,5 +196,25 @@ export class ViewingSessionController {
       return res.send(js2xmlparser.parse('viewingSession', dto));
     }
     return res.json(dto);
+  }
+
+  @All()
+  baseMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All('currently-watching/:profileId')
+  currentlyWatchingMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All('resume')
+  resumeMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All(':profileId/:contentId')
+  progressMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
   }
 }
