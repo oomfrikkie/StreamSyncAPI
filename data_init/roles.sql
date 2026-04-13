@@ -45,7 +45,6 @@ GRANT UPDATE (status, failed_login_attempts) ON account TO mid_employee;
 GRANT junior_employee TO senior_employee;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
-	account,
 	profile,
 	account_subscription,
 	discount,
@@ -57,7 +56,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
 	season,
 	episode,
 	movie,
-	account_token,
 	profile_genre_preference,
 	content_genre,
 	series_genre,
@@ -67,6 +65,16 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
 	internal_role,
 	internal_employee
 TO senior_employee;
+
+-- account: full DML but SELECT excludes password_hash (LP: no employee reads raw hashes)
+GRANT INSERT, UPDATE, DELETE ON TABLE account TO senior_employee;
+GRANT SELECT (account_id, email, first_name, last_name, is_verified, status, failed_login_attempts, created_timestamp)
+ON account TO senior_employee;
+
+-- account_token: full DML but SELECT excludes the raw token value (LP: tokens are credentials)
+GRANT INSERT, UPDATE, DELETE ON TABLE account_token TO senior_employee;
+GRANT SELECT (token_id, token_type, account_id, expires_at, created_at, used_at, is_used)
+ON account_token TO senior_employee;
 
 -- senior_employee needs sequence usage to INSERT into tables with SERIAL primary keys
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO senior_employee;

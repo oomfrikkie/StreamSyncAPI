@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Req, Res, UseGuards, All } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
 import { ApiProduces, ApiOkResponse, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
@@ -68,5 +68,20 @@ export class WatchlistController {
       return res.send(js2xmlparser.parse('result', dtoResult));
     }
     return res.json(dtoResult);
+  }
+
+  @All()
+  baseMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All(':profileId')
+  profileMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All(':profileId/:contentId')
+  profileContentMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
   }
 }

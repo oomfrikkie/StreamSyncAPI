@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, Delete, UseGuards, Req, Res } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Delete, UseGuards, Req, Res, All } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -52,5 +52,15 @@ export class ProfileController {
       return res.send(js2xmlparser.parse('deleteResult', result));
     }
     return res.json(result);
+  }
+
+  @All()
+  baseMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All(':id')
+  idMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, Param, Req, Res } from '@nestjs/common';
+import { Controller, Get, Query, Param, Req, Res, All } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as js2xmlparser from 'js2xmlparser';
 import { ApiProduces, ApiOkResponse } from '@nestjs/swagger';
@@ -20,6 +20,70 @@ export class ContentController {
   @Get('')
   async getAll(@Req() req: Request, @Res() res: Response) {
     const result = await this.contentService.getAllContent();
+    const dtoArr: ContentResponseDto[] = result.map((item: any) => ({
+      contentId: item.content_id,
+      ageCategoryId: item.age_category_id,
+      title: item.title,
+      description: item.description,
+      contentType: item.content_type,
+      quality: item.quality_id || item.quality,
+      durationMinutes: item.duration_minutes,
+    }));
+    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
+      res.set('Content-Type', 'application/xml');
+      return res.send(js2xmlparser.parse('contents', { content: dtoArr }));
+    }
+    return res.json(dtoArr);
+  }
+  
+  @ApiQuery({ name: 'ageCategoryId', required: true, type: Number })
+  @ApiProduces('application/json', 'application/xml')
+  @ApiOkResponse({ type: ContentResponseDto, isArray: true })
+  @Get('by-age')
+  async getByAge(@Query('ageCategoryId') ageCategoryId: string, @Req() req: Request, @Res() res: Response) {
+    const result = await this.contentService.getContentBasedOnAgeRating(Number(ageCategoryId));
+    const dtoArr: ContentResponseDto[] = result.map((item: any) => ({
+      contentId: item.content_id,
+      ageCategoryId: item.age_category_id,
+      title: item.title,
+      description: item.description,
+      contentType: item.content_type,
+      quality: item.quality_id || item.quality,
+      durationMinutes: item.duration_minutes,
+    }));
+    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
+      res.set('Content-Type', 'application/xml');
+      return res.send(js2xmlparser.parse('contents', { content: dtoArr }));
+    }
+    return res.json(dtoArr);
+  }
+
+  @ApiProduces('application/json', 'application/xml')
+  @ApiOkResponse({ type: ContentResponseDto, isArray: true })
+  @Get('personalised')
+  async getPersonalised(@Query('profileId') profileId: string, @Req() req: Request, @Res() res: Response) {
+    const result = await this.contentService.getPersonalisedContent(Number(profileId));
+    const dtoArr: ContentResponseDto[] = result.map((item: any) => ({
+      contentId: item.content_id,
+      ageCategoryId: item.age_category_id,
+      title: item.title,
+      description: item.description,
+      contentType: item.content_type || item.type,
+      quality: item.quality_id || item.quality || item.quality_name,
+      durationMinutes: item.duration_minutes,
+    }));
+    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
+      res.set('Content-Type', 'application/xml');
+      return res.send(js2xmlparser.parse('contents', { content: dtoArr }));
+    }
+    return res.json(dtoArr);
+  }
+
+  @ApiProduces('application/json', 'application/xml')
+  @ApiOkResponse({ type: ContentResponseDto, isArray: true })
+  @Get('currently-watching/:profileId')
+  async currentlyWatching(@Param('profileId') profileId: string, @Req() req: Request, @Res() res: Response) {
+    const result = await this.contentService.currentlyWatching(Number(profileId));
     const dtoArr: ContentResponseDto[] = result.map((item: any) => ({
       contentId: item.content_id,
       ageCategoryId: item.age_category_id,
@@ -60,67 +124,28 @@ export class ContentController {
     return res.json(dto);
   }
 
-  @ApiQuery({ name: 'ageCategoryId', required: true, type: Number })
-  @ApiProduces('application/json', 'application/xml')
-  @ApiOkResponse({ type: ContentResponseDto, isArray: true })
-  @Get('by-age')
-  async getByAge(@Query('ageCategoryId') ageCategoryId: string, @Req() req: Request, @Res() res: Response) {
-    const result = await this.contentService.getContentBasedOnAgeRating(Number(ageCategoryId));
-    const dtoArr: ContentResponseDto[] = result.map((item: any) => ({
-      contentId: item.content_id,
-      ageCategoryId: item.age_category_id,
-      title: item.title,
-      description: item.description,
-      contentType: item.content_type,
-      quality: item.quality_id || item.quality,
-      durationMinutes: item.duration_minutes,
-    }));
-    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
-      res.set('Content-Type', 'application/xml');
-      return res.send(js2xmlparser.parse('contents', { content: dtoArr }));
-    }
-    return res.json(dtoArr);
+  @All()
+  baseMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
   }
 
-  @ApiProduces('application/json', 'application/xml')
-  @ApiOkResponse({ type: ContentResponseDto, isArray: true })
-  @Get('currently-watching/:profileId')
-  async currentlyWatching(@Param('profileId') profileId: string, @Req() req: Request, @Res() res: Response) {
-    const result = await this.contentService.currentlyWatching(Number(profileId));
-    const dtoArr: ContentResponseDto[] = result.map((item: any) => ({
-      contentId: item.content_id,
-      ageCategoryId: item.age_category_id,
-      title: item.title,
-      description: item.description,
-      contentType: item.content_type,
-      quality: item.quality_id || item.quality,
-      durationMinutes: item.duration_minutes,
-    }));
-    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
-      res.set('Content-Type', 'application/xml');
-      return res.send(js2xmlparser.parse('contents', { content: dtoArr }));
-    }
-    return res.json(dtoArr);
+  @All('by-age')
+  byAgeMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
   }
 
-  @ApiProduces('application/json', 'application/xml')
-  @ApiOkResponse({ type: ContentResponseDto, isArray: true })
-  @Get('personalised')
-  async getPersonalised(@Query('profileId') profileId: string, @Req() req: Request, @Res() res: Response) {
-    const result = await this.contentService.getPersonalisedContent(Number(profileId));
-    const dtoArr: ContentResponseDto[] = result.map((item: any) => ({
-      contentId: item.content_id,
-      ageCategoryId: item.age_category_id,
-      title: item.title,
-      description: item.description,
-      contentType: item.content_type || item.type,
-      quality: item.quality_id || item.quality || item.quality_name,
-      durationMinutes: item.duration_minutes,
-    }));
-    if (req.headers.accept && req.headers.accept.includes('application/xml')) {
-      res.set('Content-Type', 'application/xml');
-      return res.send(js2xmlparser.parse('contents', { content: dtoArr }));
-    }
-    return res.json(dtoArr);
+  @All('personalised')
+  personalisedMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All('currently-watching/:profileId')
+  currentlyWatchingMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
+  }
+
+  @All(':id')
+  idMethodNotAllowed(@Res() res: Response) {
+    return res.status(405).json({ statusCode: 405, message: 'Method Not Allowed' });
   }
 }
