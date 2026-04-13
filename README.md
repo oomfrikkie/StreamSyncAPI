@@ -1,3 +1,30 @@
+# Getting Started
+
+## Prerequisites
+
+Before running the project you must create a `.env` file in the root of the repository. A template is provided:
+
+```
+cp .env.example .env
+```
+
+Open `.env` and fill in the required values:
+
+| Variable | Description |
+|---|---|
+| `POSTGRES_USER` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | PostgreSQL password |
+| `POSTGRES_DB` | Database name |
+| `POSTGRES_HOST` | Database host (use `postgres` when running via Docker Compose) |
+| `POSTGRES_PORT` | Database port (default `5432`) |
+| `PORT` | Backend port (default `3000`) |
+| `NODE_ENV` | Environment (`development` / `production`) |
+| `JWT_SECRET` | Secret key used to sign JWT tokens |
+
+> **Never commit your `.env` file.** It is listed in `.gitignore`.
+
+---
+
 # Technology Choices & Rationale
 
 ## Authentication: Why JWT?
